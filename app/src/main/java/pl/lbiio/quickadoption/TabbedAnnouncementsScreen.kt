@@ -51,10 +51,11 @@ import coil.compose.AsyncImage
 import coil.compose.rememberImagePainter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import pl.lbiio.quickadoption.data.OwnAnnouncement
+import pl.lbiio.quickadoption.models.TabbedAnnouncementsViewModel
 
 
 @Composable
-fun TabbedAnnouncementsScreen(){
+fun TabbedAnnouncementsScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel){
     Scaffold(
         topBar = {
             SetMainActivityTopBar()
@@ -62,7 +63,7 @@ fun TabbedAnnouncementsScreen(){
         backgroundColor = Color.White,
         content = {
             it.calculateBottomPadding()
-            TabbedAnnouncementsContent()
+            TabbedAnnouncementsContent(tabbedAnnouncementsViewModel)
         },
     )
 }
@@ -91,7 +92,7 @@ private fun SetMainActivityTopBar(){
 }
 
 @Composable
-private fun TabbedAnnouncementsContent(){
+private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel){
     var tabIndex by remember { mutableIntStateOf(0) }
 
     val tabs = listOf("Own", "Public")
@@ -111,14 +112,14 @@ private fun TabbedAnnouncementsContent(){
             }
         }
         when (tabIndex) {
-            0 -> OwnScreen()
-            1 -> PublicScreen()
+            0 -> OwnScreen(tabbedAnnouncementsViewModel)
+            1 -> PublicScreen(tabbedAnnouncementsViewModel)
         }
     }
 }
 
 @Composable
-private fun OwnScreen(){
+private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel){
     BoxWithConstraints(
         Modifier.fillMaxSize()) {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom=64.dp)) {
@@ -157,7 +158,7 @@ private fun OwnScreen(){
         }
 
         FloatingActionButton(
-            onClick = {  },
+            onClick = { tabbedAnnouncementsViewModel.navigateToInsertingForm() },
             modifier = Modifier.align(Alignment.BottomEnd).padding(24.dp)
         ){
             Icon(Icons.Filled.Add, "")
@@ -166,7 +167,7 @@ private fun OwnScreen(){
 }
 
 @Composable
-private fun PublicScreen(){
+private fun PublicScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel){
     Text(
         text = "Public",
         style = MaterialTheme.typography.subtitle1,

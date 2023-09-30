@@ -1,6 +1,7 @@
 package pl.lbiio.quickadoption
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -22,6 +23,7 @@ class LoginActivity : ComponentActivity() {
     private  val PERMISSIONS_REQUEST_CODE = 1
     var PERMISSIONS = mutableListOf<String>()
     private val TAG = "PERMISSION_TAG"
+    @SuppressLint("UnusedBoxWithConstraintsScope")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         PERMISSIONS = mutableListOf(
@@ -88,14 +90,6 @@ class LoginActivity : ComponentActivity() {
             ),
             ContextCompat.checkSelfPermission(
                 this,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ),
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ),
-            ContextCompat.checkSelfPermission(
-                this,
                 Manifest.permission.VIBRATE
             )
         )
@@ -110,6 +104,19 @@ class LoginActivity : ComponentActivity() {
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
                 ))
+        }
+        else{
+            selfPermissions.add(
+                ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+                ),
+
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                )
+            )
         }
 
 
