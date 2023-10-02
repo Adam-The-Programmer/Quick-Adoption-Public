@@ -1,6 +1,5 @@
 package pl.lbiio.quickadoption
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,19 +41,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.AsyncImage
-import coil.compose.rememberImagePainter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import pl.lbiio.quickadoption.data.OwnAnnouncement
+import pl.lbiio.quickadoption.data.Announcement
 import pl.lbiio.quickadoption.models.TabbedAnnouncementsViewModel
 
 
 @Composable
-fun TabbedAnnouncementsScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel){
+fun TabbedAnnouncementsScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
     Scaffold(
         topBar = {
             SetMainActivityTopBar()
@@ -82,7 +78,7 @@ private fun TopAppBarText(
 }
 
 @Composable
-private fun SetMainActivityTopBar(){
+private fun SetMainActivityTopBar() {
     TopAppBar(
         title = {
             TopAppBarText(text = "Quick Adoption App")
@@ -92,7 +88,7 @@ private fun SetMainActivityTopBar(){
 }
 
 @Composable
-private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel){
+private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
     var tabIndex by remember { mutableIntStateOf(0) }
 
     val tabs = listOf("Own", "Public")
@@ -101,8 +97,13 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
         Surface(shadowElevation = 4.dp) {
             TabRow(selectedTabIndex = tabIndex) {
                 tabs.forEachIndexed { index, title ->
-                    Tab(text = { Text(text = title, style = MaterialTheme.typography.subtitle1.copy(
-                        Color.White)) },
+                    Tab(text = {
+                        Text(
+                            text = title, style = MaterialTheme.typography.subtitle1.copy(
+                                Color.White
+                            )
+                        )
+                    },
                         selected = tabIndex == index,
                         onClick = {
                             tabIndex = index
@@ -119,10 +120,14 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
 }
 
 @Composable
-private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel){
+private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
     BoxWithConstraints(
-        Modifier.fillMaxSize()) {
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom=64.dp)) {
+        Modifier.fillMaxSize()
+    ) {
+        Column(
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 64.dp)) {
             Row(
                 modifier = Modifier
                     .padding(start = 8.dp, top = 16.dp, bottom = 16.dp)
@@ -137,20 +142,36 @@ private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel
                 androidx.compose.material.Text("3 items".uppercase())
             }
 
-            val animals = listOf<OwnAnnouncement>(
-                OwnAnnouncement("Alex Dog Labrador", "07.11.2023 - 11.11.2023", "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Labrador_on_Quantock_%282175262184%29.jpg/800px-Labrador_on_Quantock_%282175262184%29.jpg"),
-                OwnAnnouncement("Dorry Parrot Ara", "08.11.2023 - 17.11.2023", "https://delasign.com/delasignBlack.png")
+            val animals = listOf<Announcement>(
+                Announcement(
+                    1L,
+                    101L,
+                    "Alex",
+                    "Dog",
+                    "Labrador",
+                    "11.08.2023-23.08.2023",
+                    "Bones, Meat",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Labrador_on_Quantock_%282175262184%29.jpg/800px-Labrador_on_Quantock_%282175262184%29.jpg"
+                ),
+                Announcement(
+                    1L,
+                    102L,
+                    "Dorry",
+                    "Parrot",
+                    "Ara",
+                    "08.11.2023 - 17.11.2023",
+                    "Fruits, Vegetables",
+                    "https://delasign.com/delasignBlack.png"
+                )
             )
 
             animals.forEach {
                 OwnAnnouncementListItem(
-                    it.animal,
-                    it.period,
-                    it.artwork,
-                    {
-
-                    }, {
-
+                    it,
+                    { announcementId ->
+                        tabbedAnnouncementsViewModel.navigateToChatsList(announcementId)
+                    }, {announcement ->
+                        tabbedAnnouncementsViewModel.navigateToEditingForm(announcement)
                     })
             }
 
@@ -159,15 +180,17 @@ private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel
 
         FloatingActionButton(
             onClick = { tabbedAnnouncementsViewModel.navigateToInsertingForm() },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(24.dp)
-        ){
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp)
+        ) {
             Icon(Icons.Filled.Add, "")
         }
     }
 }
 
 @Composable
-private fun PublicScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel){
+private fun PublicScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
     Text(
         text = "Public",
         style = MaterialTheme.typography.subtitle1,
@@ -179,16 +202,14 @@ private fun PublicScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewMo
 @OptIn(ExperimentalCoilApi::class)
 @Composable
 private fun OwnAnnouncementListItem(
-    animal: String,
-    period: String,
-    artworkUrl: String,
-    onItemClick: () -> Unit,
-    onEditClick: () -> Unit
-){
+    announcement: Announcement,
+    onItemClick: (announcementId: Long) -> Unit,
+    onEditClick: (announcement: Announcement) -> Unit
+) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable { onItemClick() },
+            .clickable { onItemClick(announcement.announcementId) },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
@@ -201,7 +222,7 @@ private fun OwnAnnouncementListItem(
             ) {
                 Spacer(Modifier.width(8.dp))
                 AsyncImage(
-                    model = artworkUrl,
+                    model = announcement.artwork,
                     contentDescription = "",
                     contentScale = ContentScale.FillHeight,
                     modifier = Modifier
@@ -222,12 +243,12 @@ private fun OwnAnnouncementListItem(
                     ) {
 
                         Text(
-                            text = "Animal: $animal",
+                            text = "Name: ${announcement.name}\nSpecies: ${announcement.species}\nBreed: ${announcement.breed}",
                             style = MaterialTheme.typography.body1,
                         )
 
                         Text(
-                            text = "Period: $period",
+                            text = "Period: ${announcement.dateRange}",
                             style = MaterialTheme.typography.subtitle2,
                         )
 
@@ -250,7 +271,7 @@ private fun OwnAnnouncementListItem(
                             DropdownMenuItem(onClick =
                             {
                                 expanded = !expanded
-                                onEditClick()
+                                onEditClick(announcement)
                             })
                             {
                                 Text("Edit")

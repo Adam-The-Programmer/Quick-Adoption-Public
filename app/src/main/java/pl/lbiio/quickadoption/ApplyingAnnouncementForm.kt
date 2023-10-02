@@ -14,15 +14,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -95,7 +100,10 @@ private var imgBitmap: Bitmap? = null
 @Composable
 private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnnouncementViewModel)
 {
-    Column(modifier = Modifier.fillMaxHeight(),
+    Column(
+        modifier = Modifier
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally) {
         FormInput(
             maxChar = 30,
@@ -212,6 +220,35 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
             ) {
                 Text(text = "PICK ARTWORK")
             }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Button(
+                onClick = {
+
+                },
+                modifier = Modifier
+                    .padding(8.dp, 0.dp, 4.dp, 0.dp)
+                    .fillMaxWidth(0.5f)
+            ) {
+                Text(text = "APPLY")
+            }
+
+            Button(
+                onClick = {
+                    applyAnnouncementViewModel.navigateUp()
+                },
+                modifier = Modifier
+                    .padding(4.dp, 0.dp, 8.dp, 0.dp)
+                    .fillMaxWidth(1f)
+            ) {
+                Text(text = "DISMISS")
+            }
+
+        }
+
 
     }
 }
