@@ -7,6 +7,7 @@ import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
@@ -407,13 +408,13 @@ private fun ThirdStep(registrationViewModel: RegistrationViewModel){
                 when (PackageManager.PERMISSION_GRANTED) {
                     ContextCompat.checkSelfPermission(
                         QuickAdoptionApp.getAppContext(),
-                        Manifest.permission.READ_EXTERNAL_STORAGE
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE
                     ) -> {
                         galleryLauncher.launch("image/*")
                     }
                     else -> {
                         // Asking for permission
-                        launcher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                        launcher.launch(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE)
                     }
                 }
                 Log.d("bmp", imgBitmap.toString())
