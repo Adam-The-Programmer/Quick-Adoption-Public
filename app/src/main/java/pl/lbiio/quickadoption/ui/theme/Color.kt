@@ -9,6 +9,7 @@ val SimpleWhite = Color(0xFFFFFFFF)
 val Red = Color(0xffc5032b)
 val Salmon = Color(0xfffbb8ac)
 val PurpleBrown = Color(0xFF503537)
+val PurpleBrownLight = Color(0xFF684A4C)
 
 
 @SuppressLint("ConflictingOnColor")

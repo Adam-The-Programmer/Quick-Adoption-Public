@@ -9,11 +9,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class ChatsListViewModel @Inject constructor() :
+class PublicChatsListViewModel @Inject constructor() :
     ViewModel() {
     private var navController: NavController? = null
-
-    val announcementId: MutableState<Long> = mutableLongStateOf(-1L)
 
     fun initNavController(navController: NavController) {
         this.navController = navController

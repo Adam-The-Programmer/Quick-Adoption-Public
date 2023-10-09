@@ -499,7 +499,7 @@ private fun FormInput(
 }
 
 
-fun getFilePath(context: Context, uri: Uri): String? {
+private fun getFilePath(context: Context, uri: Uri): String? {
     val isMediaDocument = uri.authority == "com.android.providers.media.documents"
     if (isMediaDocument) {
         val docId = DocumentsContract.getDocumentId(uri)
@@ -524,7 +524,7 @@ fun getFilePath(context: Context, uri: Uri): String? {
     return null
 }
 
-fun getDataColumn(
+private fun getDataColumn(
     context: Context,
     uri: Uri?,
     selection: String?,

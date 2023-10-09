@@ -1,11 +1,15 @@
 package pl.lbiio.quickadoption
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -72,12 +76,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import coil.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import pl.lbiio.quickadoption.models.ApplyAnnouncementViewModel
 import pl.lbiio.quickadoption.support.RangeDateFormatter
 import java.io.File
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -165,7 +171,7 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
                 Log.d("uri", it.toString())
                 selectedImage = listOf(it) as List<Uri>
                 // artwork = getFilePath(QuickAdoptionApp.getAppContext(), it!!)!!
-                applyAnnouncementViewModel.animal_image.value = getFilePath(QuickAdoptionApp.getAppContext(), it!!)!!
+                applyAnnouncementViewModel.animal_image.value = codePathFile(getFilePath(QuickAdoptionApp.getAppContext(), it!!)!!)
 
             }
         val launcher = rememberLauncherForActivityResult(
@@ -180,13 +186,15 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
 
         val painter: Painter = if (selectedImage.isEmpty() && applyAnnouncementViewModel.animal_image.value.isEmpty()) {
             painterResource(id = R.drawable.ic_image)
-        } else {
+        } else if(!applyAnnouncementViewModel.animal_image.value.contains("http")) {
             val bitmap: Bitmap = BitmapFactory.decodeFile(
-                File(applyAnnouncementViewModel.animal_image.value).absolutePath,
+                File(decodePathFile(applyAnnouncementViewModel.animal_image.value)).absolutePath,
                 BitmapFactory.Options()
             )
             val imageBitmap: ImageBitmap = bitmap.asImageBitmap()
             BitmapPainter(imageBitmap)
+        }else{
+            rememberAsyncImagePainter(decodePathFile(applyAnnouncementViewModel.animal_image.value))
         }
             Image(
                 painter = painter,
@@ -227,7 +235,7 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
         ) {
             Button(
                 onClick = {
-
+                    //applyAnnouncementViewModel.clearViewModel()
                 },
                 modifier = Modifier
                     .padding(8.dp, 0.dp, 4.dp, 0.dp)
@@ -238,6 +246,7 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
 
             Button(
                 onClick = {
+                    //applyAnnouncementViewModel.clearViewModel()
                     applyAnnouncementViewModel.navigateUp()
                 },
                 modifier = Modifier
@@ -273,8 +282,11 @@ private fun SetApplyingAnnouncementFormTopBar(applyAnnouncementViewModel: ApplyA
             TopAppBarText(text = "Quick Adoption App")
         },
         navigationIcon = {
-            IconButton(onClick = {applyAnnouncementViewModel.navigateUp()}) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+            IconButton(onClick = {
+                //applyAnnouncementViewModel.clearViewModel()
+                applyAnnouncementViewModel.navigateUp()
+            }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
             }
         },
         elevation = 0.dp
@@ -397,7 +409,7 @@ private fun DateInput(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DateRangePickerSample(applyAnnouncementViewModel: ApplyAnnouncementViewModel) {
+private fun DateRangePickerSample(applyAnnouncementViewModel: ApplyAnnouncementViewModel) {
     val formatter = SimpleDateFormat("dd MMMM yyyy", Locale.ROOT)
 
     //val calendar = Calendar.getInstance()
@@ -433,7 +445,7 @@ fun DateRangePickerSample(applyAnnouncementViewModel: ApplyAnnouncementViewModel
                     showDateRangePicker = false
                     startDate = dateRangePickerState.selectedStartDateMillis!!
                     endDate = dateRangePickerState.selectedEndDateMillis!!
-                    applyAnnouncementViewModel.date.value = formatInputDateValue("${formatter.format(Date(startDate))}-${formatter.format(Date(endDate))}")
+                    applyAnnouncementViewModel.date.value = "${formatInputDateValue(startDate)}-${formatInputDateValue(endDate)}"
                     //range = applyAnnouncementViewModel.date.value
                     Log.d("zakres", applyAnnouncementViewModel.date.value)
                 }) {
@@ -492,8 +504,70 @@ fun DateRangePickerSample(applyAnnouncementViewModel: ApplyAnnouncementViewModel
     }
 }
 
-private fun formatInputDateValue(input: String): String {
-    return input.replace("M", "").replace(" ", ".")
+private fun formatInputDateValue(dateMillis: Long): String {
+    val date = LocalDate.ofEpochDay(dateMillis / 86400000) // Convert millis to LocalDate
+
+    // Format the date as "yy MM dd"
+    return String.format(
+        "%02d.%02d.%02d",
+        date.dayOfMonth,
+        date.monthValue,
+        date.year
+    )
 }
+private fun getFilePath(context: Context, uri: Uri): String? {
+    val isMediaDocument = uri.authority == "com.android.providers.media.documents"
+    if (isMediaDocument) {
+        val docId = DocumentsContract.getDocumentId(uri)
+        val split = docId.split(":").toTypedArray()
+        val type = split[0]
+        var contentUri: Uri? = null
+        if ("image" == type) {
+            contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        } else if ("video" == type) {
+            contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        } else if ("audio" == type) {
+            contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        }
+        val selection = "_id=?"
+        val selectionArgs = arrayOf(split[1])
+        return getDataColumn(context, contentUri, selection, selectionArgs)
+    } else if ("content".equals(uri.scheme, ignoreCase = true)) {
+        return getDataColumn(context, uri, null, null)
+    } else if ("file".equals(uri.scheme, ignoreCase = true)) {
+        return uri.path
+    }
+    return null
+}
+
+private fun getDataColumn(
+    context: Context,
+    uri: Uri?,
+    selection: String?,
+    selectionArgs: Array<String>?
+): String? {
+    var cursor: Cursor? = null
+    val column = "_data"
+    val projection = arrayOf(column)
+    try {
+        cursor = context.contentResolver.query(uri!!, projection, selection, selectionArgs, null)
+        if (cursor != null && cursor.moveToFirst()) {
+            val column_index = cursor.getColumnIndexOrThrow(column)
+            return cursor.getString(column_index)
+        }
+    } finally {
+        cursor?.close()
+    }
+    return null
+}
+
+private fun codePathFile(path: String): String {
+    return path.replace("/", "*")
+}
+
+private fun decodePathFile(codedPath: String): String {
+    return codedPath.replace("*", "/")
+}
+
 
 

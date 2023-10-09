@@ -9,21 +9,27 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class ChatConsoleViewModel @Inject constructor() :
+class OwnChatsListViewModel @Inject constructor() :
     ViewModel() {
     private var navController: NavController? = null
 
-    val chatId: MutableState<Long> = mutableLongStateOf(-1L)
+    val announcementId: MutableState<Long> = mutableLongStateOf(-1L)
+    val animalName: MutableState<String> = mutableStateOf("")
 
     fun initNavController(navController: NavController) {
         this.navController = navController
     }
 
-    fun navigateUp() {
+    fun navigateUp(){
         navController?.navigateUp()
     }
 
+    fun navigateToChat(chatId: Long){
+        navController?.navigate("chat/${chatId}")
+    }
+
     fun clearViewModel(){
-        chatId.value = -1L
+        announcementId.value = -1L
+        animalName.value = ""
     }
 }

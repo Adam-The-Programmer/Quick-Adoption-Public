@@ -31,4 +31,13 @@ class ApplyAnnouncementViewModel @Inject constructor() :
         navController?.navigateUp()
     }
 
+    fun clearViewModel(){
+        species.value = ""
+        breed.value = ""
+        animal_name.value = ""
+        date.value = ""
+        food.value = ""
+        animal_image.value = ""
+    }
+
 }
