@@ -77,7 +77,7 @@ interface ApiService {
     @GET("getAllPublicAnnouncementListItems/{Country}/{City}/{DateRange}/{UID}")
     fun getAllPublicAnnouncementListItems(@Path("Country") Country: String, @Path("City") City: String, @Path("DateRange") DateRange: String, @Path("UID") UID: String): Observable<List<PublicAnnouncementListItem>>
 
-    @PUT("getParticularPublicAnnouncement/{AnnouncementID}")
+    @GET("getParticularPublicAnnouncement/{AnnouncementID}")
     fun getParticularPublicAnnouncement(@Path("AnnouncementID") AnnouncementID: Long): Observable<PublicAnnouncementDetails>
 
     @PUT("applyForAdoption")

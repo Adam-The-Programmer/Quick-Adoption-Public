@@ -305,41 +305,20 @@ private fun ChatsListItem(
                             )
 
                             androidx.compose.material3.Text(
-                                modifier = Modifier.fillMaxWidth(0.6f),
+                                modifier = Modifier.fillMaxWidth(0.5f),
                                 text = if(ownAnnouncementChat.lastMessageContentType=="text")ownAnnouncementChat.lastMessageContent else "sends image",
                                 overflow = TextOverflow.Ellipsis,
                                 maxLines = 1,
                                 style = MaterialTheme.typography.body1
                             )
-
-                            Divider(modifier = Modifier.width(8.dp))
-
-                            androidx.compose.material3.Text(
-                                modifier = Modifier.fillMaxWidth(0.4f),
-                                text = timeSinceLastMessage(ownAnnouncementChat.lastMessageTimestamp),
-                                style = MaterialTheme.typography.caption,
-                            )
                         }
                     }
-                    IconButton(modifier = Modifier.padding(4.dp), onClick = {
-                        openDialog.value = true
+                    androidx.compose.material3.Text(
+                        modifier = Modifier.fillMaxWidth(0.5f),
+                        text = timeSinceLastMessage(ownAnnouncementChat.lastMessageTimestamp),
+                        style = MaterialTheme.typography.caption,
+                    )
 
-                    }) {
-                        Icon(
-                            imageVector = when (ownAnnouncementChat.isAccepted) {
-                                0 -> Icons.Outlined.Cancel
-                                1 -> Icons.Outlined.Check
-                                else -> Icons.Outlined.QuestionMark
-                            },
-                            contentDescription = null,
-                            tint = when (ownAnnouncementChat.isAccepted) {
-                                0 -> Color.Red
-                                1 -> Color.Green
-                                else -> Color.Gray
-                            }
-                        )
-
-                    }
                 }
             }
         }

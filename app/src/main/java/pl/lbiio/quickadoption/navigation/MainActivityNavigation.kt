@@ -1,6 +1,7 @@
 package pl.lbiio.quickadoption.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import pl.lbiio.quickadoption.ApplyingAnnouncementForm
@@ -53,19 +54,6 @@ fun MainActivityNavigate() {
             backStackEntry.arguments?.apply {
                 val announcementId = getString(Destination.AnnouncementEditScreen.ANNOUNCEMENT_ID_KEY)
                 applyAnnouncementViewModel.announcementId.value = announcementId!!.toLong()
-//                LaunchedEffect(Unit){
-//                    applyAnnouncementViewModel.getAnnouncementById()
-//                }
-//                if(applyAnnouncementViewModel.isFinished.value){
-//
-//                }
-//                Log.d("announcement.species Nav", applyAnnouncementViewModel.species.value)
-//                Log.d("announcement.breed", applyAnnouncementViewModel.breed.value)
-//                Log.d("announcement.animalName", applyAnnouncementViewModel.animalName.value)
-//                Log.d("announcement.dateRange", applyAnnouncementViewModel.dateRange.value)
-//                Log.d("announcement.food", applyAnnouncementViewModel.food.value)
-//                Log.d("announcement.animalImage", applyAnnouncementViewModel.animalImage.value)
-//                Log.d("announcement.animalDescription", applyAnnouncementViewModel.animalDescription.value)
                 ApplyingAnnouncementForm(applyAnnouncementViewModel)
             }
         }
@@ -99,16 +87,18 @@ fun MainActivityNavigate() {
                     chatConsoleViewModel.isChatOwn.value = isChatOwn.toBoolean()
                     //Log.d("wartosc", isChatOwn.toBoolean().toString())
                     chatConsoleViewModel.initValues()
+                    LaunchedEffect(Unit){
+                        chatConsoleViewModel.listenToMessages()
+                    }
                     ChatConsole(chatConsoleViewModel)
                 }
             }
         }
         composable(destination = Destination.PublicOfferDetailsScreen) {backStackEntry ->
-            publicAnnouncementDetailsViewModel.clearViewModel()
+            //publicAnnouncementDetailsViewModel.clearViewModel()
             backStackEntry.arguments?.apply {
                 val announcementId = getString(Destination.PublicOfferDetailsScreen.ANNOUNCEMENT_ID_KEY)
                 publicAnnouncementDetailsViewModel.announcementID.value = announcementId!!.toLong()
-                publicAnnouncementDetailsViewModel.initValues()
                 PublicAnnouncementDetailScreen(publicAnnouncementDetailsViewModel)
             }
 

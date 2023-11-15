@@ -1,17 +1,17 @@
 package pl.lbiio.quickadoption.models
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import pl.lbiio.quickadoption.data.ChatMessage
 import pl.lbiio.quickadoption.navigation.AppNavigator
+import pl.lbiio.quickadoption.repositories.ChatConsoleRepository
 import javax.inject.Inject
 
 @HiltViewModel
-class ChatConsoleViewModel @Inject constructor() :
+class ChatConsoleViewModel @Inject constructor(private val chatConsoleRepository: ChatConsoleRepository) :
     ViewModel() {
     private var appNavigator: AppNavigator? = null
    // private var navController: NavController? = null
@@ -52,6 +52,24 @@ class ChatConsoleViewModel @Inject constructor() :
     }
 
     fun navigateToOpinions() {
+
+    }
+
+    fun listenToMessages(){
+        chatConsoleRepository.listenToMessages(chatId.value) {
+            conversation.value = it
+        }
+    }
+
+    fun uploadMessage(content: String, contentType: String){
+        if(contentType=="image"){
+            chatConsoleRepository.uploadImageToFirebase("${System.currentTimeMillis()}-${chatId.value}", content){url->
+                chatConsoleRepository.uploadMessage(url, contentType, "GD1xpVfmb4Z4zdmvBVFT")
+            }
+        }
+        else{
+            chatConsoleRepository.uploadMessage(content, contentType, "GD1xpVfmb4Z4zdmvBVFT")
+        }
 
     }
 }

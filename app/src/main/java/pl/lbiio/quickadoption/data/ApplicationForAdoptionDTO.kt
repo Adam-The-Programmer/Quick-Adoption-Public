@@ -1,7 +1,7 @@
 package pl.lbiio.quickadoption.data
 
 data class ApplicationForAdoptionDTO(
-    val announcementID: String,
+    val announcementID: Long,
     val chatID: String,
     val ownerID: String,
     val keeperID: String,

@@ -26,8 +26,6 @@ class TabbedAnnouncementsRepository @Inject constructor(private val apiService: 
         return apiService.getAllPublicAnnouncementListItems(country, city, dateRange, UID)
     }
 
-    fun getParticularPublicAnnouncement(announcementId: Long): Observable<PublicAnnouncementDetails> {
-        return apiService.getParticularPublicAnnouncement(announcementId)
-    }
+
 
 }

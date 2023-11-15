@@ -72,7 +72,7 @@ class TabbedAnnouncementsViewModel @Inject constructor(private val tabbedAnnounc
     fun navigateToPublicOffer(announcementId: Long) {
         appNavigator?.tryNavigateTo(
             Destination.PublicOfferDetailsScreen(
-                announcementId = announcementId
+                announcementId = announcementId,
             )
         )
     }

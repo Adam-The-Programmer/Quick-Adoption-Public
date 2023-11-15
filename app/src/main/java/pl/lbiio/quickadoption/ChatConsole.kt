@@ -93,7 +93,7 @@ fun ChatConsole(chatConsoleViewModel: ChatConsoleViewModel) {
         },
         bottomBar = {
             MessageSenderConsole { value, type ->
-                Toast.makeText(QuickAdoptionApp.getAppContext(), value, Toast.LENGTH_SHORT).show()
+                chatConsoleViewModel.uploadMessage(value, type)
             }
         },
         backgroundColor = Color.White,

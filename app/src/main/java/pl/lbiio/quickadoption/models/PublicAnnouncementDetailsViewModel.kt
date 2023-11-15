@@ -1,53 +1,126 @@
 package pl.lbiio.quickadoption.models
 
+import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import pl.lbiio.quickadoption.QuickAdoptionApp
+import pl.lbiio.quickadoption.data.ApplicationForAdoptionDTO
+import pl.lbiio.quickadoption.data.OwnAnnouncementListItem
+import pl.lbiio.quickadoption.data.PublicAnnouncementDetails
 import pl.lbiio.quickadoption.navigation.AppNavigator
+import pl.lbiio.quickadoption.repositories.PublicAnnouncementDetailsRepository
 import javax.inject.Inject
 
 @HiltViewModel
-class PublicAnnouncementDetailsViewModel @Inject constructor() :
-    ViewModel(){
+class PublicAnnouncementDetailsViewModel @Inject constructor(private val publicAnnouncementDetailsRepository: PublicAnnouncementDetailsRepository) :
+    ViewModel() {
     private var appNavigator: AppNavigator? = null
-    //private var navController: NavController? = null
+    private val disposables = CompositeDisposable()
 
     val announcementID: MutableState<Long> = mutableStateOf(-1L)
-    val animalImage: MutableState<String> = mutableStateOf("")
-    val dateRange: MutableState<String> = mutableStateOf("")
-    val description: MutableState<String> = mutableStateOf("")
-    val food: MutableState<String> = mutableStateOf("")
-    val ownerImage: MutableState<String> = mutableStateOf("")
-    val ownerDescription: MutableState<String> = mutableStateOf("")
+    val isFinished: MutableState<Boolean> = mutableStateOf(true)
 
 
-    fun initAppNavigator(appNavigator: AppNavigator){
+    val announcementDetails: MutableState<PublicAnnouncementDetails> =
+        mutableStateOf(PublicAnnouncementDetails())
+    val message: MutableState<String> = mutableStateOf("I want to adopt your pet")
+
+    fun initAppNavigator(appNavigator: AppNavigator) {
         this.appNavigator = appNavigator
     }
 
 
-    fun initValues(){
-        animalImage.value = "https:**upload.wikimedia.org*wikipedia*commons*thumb*3*34*Labrador_on_Quantock_%282175262184%29.jpg*800px-Labrador_on_Quantock_%282175262184%29.jpg"
-        dateRange.value = "08.11.2023 - 23.11.2023"
-        description.value = "Alex is a calm dog which doesn't like staying alone in home"
-        food.value = "Fodder, Meat and Fish"
-        ownerImage.value = "https:**bi.im-g.pl*im*11*06*1a*z27288081IER,Alvaro-Soler---2.jpg"
-        ownerDescription.value = "I look after my dog since 2018.\nSometimes I need a person who can take over from me"
-    }
-
-    fun navigateUp(){
+    fun navigateUp() {
         appNavigator?.tryNavigateBack()
     }
 
-    fun clearViewModel(){
-        val announcementID = -1L
-        val animalImage = ""
-        val dateRange = ""
-        val description = ""
-        val food = ""
-        val ownerImage = ""
-        val ownerDescription = ""
+    fun clearViewModel() {
+        message.value = "I want to adopt your pet"
+        announcementDetails.value.clearObject()
     }
+
+    private fun getDetailsOfOffer(
+        onSuccess: (details: PublicAnnouncementDetails) -> Unit,
+        onError: (error: Throwable) -> Unit
+    ) {
+        val disposable =
+            publicAnnouncementDetailsRepository.getParticularPublicAnnouncement(announcementID.value)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    { details -> onSuccess(details) },
+                    { error -> onError(error) }
+                )
+        disposables.add(disposable)
+    }
+
+    fun applyForAdoption(
+        lastMessageContent: String,
+        chatID: String,
+        ownerID: String,
+        onComplete: () -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        val disposable = publicAnnouncementDetailsRepository.applyForAdoption(
+            ApplicationForAdoptionDTO(
+                announcementID.value,
+                chatID,
+                ownerID,
+                QuickAdoptionApp.getCurrentUserId()!!,
+                lastMessageContent,
+                "text",
+                QuickAdoptionApp.getCurrentUserId()!!
+
+            )
+        )
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { onComplete() },
+                { error -> onError(error) }
+            )
+        disposables.add(disposable)
+    }
+
+    fun fillDetailsObject() {
+        isFinished.value = false
+        getDetailsOfOffer(
+            onSuccess = {
+                isFinished.value = true
+                announcementDetails.value = it
+                Log.d("dane", announcementDetails.value.dateRange.toString())
+            },
+            onError = {
+
+            }
+        )
+    }
+
+    fun initConversation() {
+        isFinished.value = false
+        publicAnnouncementDetailsRepository.createDocumentAndGetID(message.value,
+            {chatID->
+                applyForAdoption(
+                    message.value,
+                    chatID,
+                    announcementDetails.value.ownerID,
+                    {
+                        isFinished.value = true
+                    },
+                    {
+
+                    }
+                )
+            }, {
+
+            })
+    }
+
+
 }
