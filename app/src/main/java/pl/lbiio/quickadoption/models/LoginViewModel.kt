@@ -1,31 +1,101 @@
 package pl.lbiio.quickadoption.models
 
+import android.content.Context
+import android.content.Intent
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.navigation.NavController
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import pl.lbiio.quickadoption.MainActivity
+import pl.lbiio.quickadoption.QuickAdoptionApp
+import pl.lbiio.quickadoption.navigation.AppNavigator
+import pl.lbiio.quickadoption.navigation.Destination
+import pl.lbiio.quickadoption.repositories.LoginRepository
 import javax.inject.Inject
 
 @HiltViewModel
-class LoginViewModel @Inject constructor() :
-    ViewModel(){
-    private var navController: NavController? = null
+class LoginViewModel @Inject constructor(private val loginRepository: LoginRepository) :
+    ViewModel() {
+    private var appNavigator: AppNavigator? = null
     val email: MutableState<String> = mutableStateOf("")
     val password: MutableState<String> = mutableStateOf("")
+    var isFinished: MutableState<Boolean> = mutableStateOf(true)
 
-    fun initNavController(navController: NavController) {
-        this.navController = navController
+//    init{
+//        if(QuickAdoptionApp.getCurrentUserId()!=null){
+//            val mainActivityIntent = Intent(
+//                QuickAdoptionApp.getAppContext(),
+//                MainActivity::class.java
+//            )
+//            mainActivityIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+//            QuickAdoptionApp.getAppContext()
+//                .startActivity(mainActivityIntent)
+//        }
+//    }
+
+    fun initAppNavigator(appNavigator: AppNavigator) {
+        this.appNavigator = appNavigator
     }
 
     fun navigateToRegistrationForm() {
-        navController?.navigate("register")
+        appNavigator?.tryNavigateTo(Destination.RegistrationScreen())
     }
 
-    fun doLogin() {
-        Log.d("login data", "${email.value}, ${password.value}")
+    fun clearViewModel(){
+        email.value = ""
+        password.value = ""
+        isFinished.value = true
     }
 
+    private fun login(email: String, password: String, ctx: Context) {
+        loginRepository.login(email, password).addOnSuccessListener {
+            if (!QuickAdoptionApp.getCurrentUser()!!.isEmailVerified) {
+                QuickAdoptionApp.getCurrentUser()!!.sendEmailVerification()
+                Toast.makeText(ctx, "We sent verification email on your E-mail", Toast.LENGTH_SHORT)
+                    .show()
+            }
+            startListeningToEmailVerification()
+            isFinished.value = false
+        }
+    }
 
+    fun tryLogIn() {
+        viewModelScope.launch {
+            isFinished.value = false
+            Log.d("login data", "${email.value}, ${password.value}")
+            loginRepository.canLogin(
+                email.value
+            ) {
+                isFinished.value = true
+                if (it) login(email.value, password.value, QuickAdoptionApp.getAppContext())
+                else Toast.makeText(QuickAdoptionApp.getAppContext(), "Please create account to log in", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun startListeningToEmailVerification() {
+        QuickAdoptionApp.getAuth()?.currentUser?.reload()?.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val user = QuickAdoptionApp.getAuth()?.currentUser
+                val isEmailVerified = user?.isEmailVerified ?: false
+                Log.d("isVerified", isEmailVerified.toString())
+                if (!isEmailVerified) {
+                    startListeningToEmailVerification()
+                } else {
+                    isFinished.value = true
+                    val mainActivityIntent = Intent(
+                        QuickAdoptionApp.getAppContext(),
+                        MainActivity::class.java
+                    )
+                    mainActivityIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    QuickAdoptionApp.getAppContext()
+                        .startActivity(mainActivityIntent)
+                }
+            }
+        }
+    }
 }

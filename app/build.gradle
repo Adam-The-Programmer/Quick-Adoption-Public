@@ -3,6 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
     id 'dagger.hilt.android.plugin'
+    id 'com.google.gms.google-services'
 }
 
 android {
@@ -50,10 +51,40 @@ android {
 
 dependencies {
 
+    //Retrofit
+    implementation('com.squareup.retrofit2:retrofit:2.3.0')
+            {
+                exclude module: 'okhttp'
+            }
+
+    implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
+    implementation 'com.squareup.retrofit2:adapter-rxjava2:2.3.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.11.0' //3.9.1
+    implementation 'com.squareup.okhttp3:okhttp:4.11.0'
+
+    //livedata
+    implementation "androidx.compose.runtime:runtime-livedata:1.5.4"
+
+    //RxJava
+    implementation "io.reactivex.rxjava3:rxjava:3.1.6"
+    implementation 'io.reactivex.rxjava2:rxandroid:2.0.0'
+
+    //firebase
+    implementation 'com.google.gms:google-services:4.3.15'
+    implementation platform('com.google.firebase:firebase-bom:31.0.3')
+    implementation 'com.google.firebase:firebase-auth-ktx'
+    implementation 'com.google.firebase:firebase-storage-ktx:20.2.0'
+    implementation 'com.google.firebase:firebase-database-ktx:20.2.2'
+    implementation 'com.google.firebase:firebase-firestore-ktx:24.6.1'
+
+    //rating stars
+    implementation 'androidx.compose.material:material-icons-extended-android:1.6.0-alpha08'
+
     //material 3
     implementation "androidx.compose.material3:material3:1.2.0-alpha08"
 
     //Hilt-Dagger
+    implementation "androidx.hilt:hilt-navigation-compose:1.0.0"
     implementation "com.google.dagger:hilt-android:$hilt_version"
     implementation platform('androidx.compose:compose-bom:2022.10.00')
     implementation 'com.google.android.material:material:1.9.0'

@@ -14,12 +14,14 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -33,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
@@ -54,6 +57,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -75,6 +79,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import coil.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.channels.BufferOverflow
@@ -106,96 +112,118 @@ private var imgBitmap: Bitmap? = null
 @Composable
 private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnnouncementViewModel)
 {
-    Column(
-        modifier = Modifier
-        .fillMaxSize()
-        .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally) {
-        FormInput(
-            maxChar = 30,
-            label = "Name",
-            leadingIcon = Icons.Default.Edit,
-            transformation = VisualTransformation.None,
-            keyboardType = KeyboardType.Text,
-            maxLines = 1,
-            currentValue = applyAnnouncementViewModel.animal_name.value,
-            onTextChange = {
-                applyAnnouncementViewModel.animal_name.value = it
-            }
-        )
-        FormInput(
-            maxChar = 30,
-            label = "Species",
-            leadingIcon = Icons.Default.Edit,
-            transformation = VisualTransformation.None,
-            keyboardType = KeyboardType.Text,
-            maxLines = 1,
-            currentValue = applyAnnouncementViewModel.species.value,
-            onTextChange = {
-                applyAnnouncementViewModel.species.value = it
-            }
-        )
-        FormInput(
-            maxChar = 30,
-            label = "Breed",
-            leadingIcon = Icons.Default.Edit,
-            transformation = VisualTransformation.None,
-            keyboardType = KeyboardType.Text,
-            maxLines = 1,
-            currentValue = applyAnnouncementViewModel.breed.value,
-            onTextChange = {
-                applyAnnouncementViewModel.breed.value = it
-            }
-        )
-
-        DateRangePickerSample(applyAnnouncementViewModel)
-
-        FormInput(
-            maxChar = 30,
-            label = "Food",
-            leadingIcon = Icons.Default.Edit,
-            transformation = VisualTransformation.None,
-            keyboardType = KeyboardType.Text,
-            maxLines = 1,
-            currentValue = applyAnnouncementViewModel.food.value,
-            onTextChange = {
-                applyAnnouncementViewModel.breed.value = it
-            }
-        )
-
-
-        var selectedImage by remember { mutableStateOf(listOf<Uri>()) }
-        //var artwork by remember { mutableStateOf("") }
-        val galleryLauncher =
-            rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
-                Log.d("uri", it.toString())
-                selectedImage = listOf(it) as List<Uri>
-                // artwork = getFilePath(QuickAdoptionApp.getAppContext(), it!!)!!
-                applyAnnouncementViewModel.animal_image.value = codePathFile(getFilePath(QuickAdoptionApp.getAppContext(), it!!)!!)
-
-            }
-        val launcher = rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (isGranted) {
-                Log.d("notification", "PERMISSION GRANTED")
-            } else {
-                Log.d("notification", "PERMISSION DENIED")
-            }
+    LaunchedEffect(Unit){
+        if(applyAnnouncementViewModel.announcementId.value!=-1L){
+            applyAnnouncementViewModel.getAnnouncementById()
         }
+    }
+    //val x = remember{ mutableStateOf(applyAnnouncementViewModel.species.value) }
 
-        val painter: Painter = if (selectedImage.isEmpty() && applyAnnouncementViewModel.animal_image.value.isEmpty()) {
-            painterResource(id = R.drawable.ic_image)
-        } else if(!applyAnnouncementViewModel.animal_image.value.contains("http")) {
-            val bitmap: Bitmap = BitmapFactory.decodeFile(
-                File(decodePathFile(applyAnnouncementViewModel.animal_image.value)).absolutePath,
-                BitmapFactory.Options()
+    BoxWithConstraints(contentAlignment = Alignment.Center) {
+        this.constraints
+        Log.d("announcement.species Screen", applyAnnouncementViewModel.species.value)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            FormInput(
+                maxChar = 30,
+                label = "Name",
+                leadingIcon = Icons.Default.Edit,
+                transformation = VisualTransformation.None,
+                keyboardType = KeyboardType.Text,
+                maxLines = 1,
+                currentValue = applyAnnouncementViewModel.animalName.value,
+                onTextChange = {
+                    applyAnnouncementViewModel.animalName.value = it
+                }
             )
-            val imageBitmap: ImageBitmap = bitmap.asImageBitmap()
-            BitmapPainter(imageBitmap)
-        }else{
-            rememberAsyncImagePainter(decodePathFile(applyAnnouncementViewModel.animal_image.value))
-        }
+            FormInput(
+                maxChar = 30,
+                label = "Species",
+                leadingIcon = Icons.Default.Edit,
+                transformation = VisualTransformation.None,
+                keyboardType = KeyboardType.Text,
+                maxLines = 1,
+                currentValue = applyAnnouncementViewModel.species.value,
+                onTextChange = {
+                    applyAnnouncementViewModel.species.value = it
+                }
+            )
+            FormInput(
+                maxChar = 30,
+                label = "Breed",
+                leadingIcon = Icons.Default.Edit,
+                transformation = VisualTransformation.None,
+                keyboardType = KeyboardType.Text,
+                maxLines = 1,
+                currentValue = applyAnnouncementViewModel.breed.value,
+                onTextChange = {
+                    applyAnnouncementViewModel.breed.value = it
+                }
+            )
+
+            DateRangePickerSample(applyAnnouncementViewModel)
+
+            FormInput(
+                maxChar = 30,
+                label = "Food",
+                leadingIcon = Icons.Default.Edit,
+                transformation = VisualTransformation.None,
+                keyboardType = KeyboardType.Text,
+                maxLines = 1,
+                currentValue = applyAnnouncementViewModel.food.value,
+                onTextChange = {
+                    applyAnnouncementViewModel.food.value = it
+                }
+            )
+
+            FormInput(
+                maxChar = 250,
+                label = "Animal Description",
+                leadingIcon = Icons.Default.Edit,
+                transformation = VisualTransformation.None,
+                keyboardType = KeyboardType.Text,
+                maxLines = 8,
+                currentValue = applyAnnouncementViewModel.animalDescription.value,
+                onTextChange = {
+                    applyAnnouncementViewModel.animalDescription.value = it
+                }
+            )
+
+
+            var selectedImage by remember { mutableStateOf(listOf<Uri>()) }
+            //var artwork by remember { mutableStateOf("") }
+            val galleryLauncher =
+                rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
+                    Log.d("uri", it.toString())
+                    selectedImage = listOf(it) as List<Uri>
+                    applyAnnouncementViewModel.animalImage.value = getFilePath(QuickAdoptionApp.getAppContext(), it!!)!!
+
+                }
+            val launcher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) { isGranted: Boolean ->
+                if (isGranted) {
+                    Log.d("notification", "PERMISSION GRANTED")
+                } else {
+                    Log.d("notification", "PERMISSION DENIED")
+                }
+            }
+
+            val painter: Painter = if (selectedImage.isEmpty() && applyAnnouncementViewModel.animalImage.value.isEmpty()) {
+                painterResource(id = R.drawable.ic_image)
+            } else if(!applyAnnouncementViewModel.animalImage.value.contains("http")) {
+                val bitmap: Bitmap = BitmapFactory.decodeFile(
+                    File(decodePathFile(applyAnnouncementViewModel.animalImage.value)).absolutePath,
+                    BitmapFactory.Options()
+                )
+                val imageBitmap: ImageBitmap = bitmap.asImageBitmap()
+                BitmapPainter(imageBitmap)
+            }else{
+                rememberAsyncImagePainter(decodePathFile(applyAnnouncementViewModel.animalImage.value))
+            }
             Image(
                 painter = painter,
                 contentDescription = "",
@@ -229,37 +257,55 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
                 Text(text = "PICK ARTWORK")
             }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Button(
-                onClick = {
-                    //applyAnnouncementViewModel.clearViewModel()
-                },
-                modifier = Modifier
-                    .padding(8.dp, 0.dp, 4.dp, 0.dp)
-                    .fillMaxWidth(0.5f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = "APPLY")
+                Button(
+                    onClick = {
+                        applyAnnouncementViewModel.applyAnnouncement()
+                    },
+                    modifier = Modifier
+                        .padding(8.dp, 0.dp, 4.dp, 0.dp)
+                        .fillMaxWidth(0.5f)
+                ) {
+                    Text(text = "APPLY")
+                }
+
+                Button(
+                    onClick = {
+                        Log.d("dane", applyAnnouncementViewModel.animalDescription.value)
+                        applyAnnouncementViewModel.navigateUp()
+                    },
+                    modifier = Modifier
+                        .padding(4.dp, 0.dp, 8.dp, 0.dp)
+                        .fillMaxWidth(1f)
+                ) {
+                    Text(text = "DISMISS")
+                }
+
             }
 
-            Button(
-                onClick = {
-                    //applyAnnouncementViewModel.clearViewModel()
-                    applyAnnouncementViewModel.navigateUp()
-                },
-                modifier = Modifier
-                    .padding(4.dp, 0.dp, 8.dp, 0.dp)
-                    .fillMaxWidth(1f)
-            ) {
-                Text(text = "DISMISS")
-            }
 
         }
 
-
+        if (!applyAnnouncementViewModel.isFinished.value) {
+            Dialog(
+                onDismissRequest = { applyAnnouncementViewModel.isFinished.value = true },
+                DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+            ) {
+                Box(
+                    contentAlignment= Alignment.Center,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .background(Color.White, shape = RoundedCornerShape(8.dp))
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
     }
+
 }
 
 @Composable
@@ -267,7 +313,7 @@ private fun TopAppBarText(
     modifier: Modifier = Modifier,
     text: String
 ) {
-    androidx.compose.material.Text(
+    Text(
         modifier = modifier,
         text = text,
         style = MaterialTheme.typography.subtitle1,
@@ -283,7 +329,6 @@ private fun SetApplyingAnnouncementFormTopBar(applyAnnouncementViewModel: ApplyA
         },
         navigationIcon = {
             IconButton(onClick = {
-                //applyAnnouncementViewModel.clearViewModel()
                 applyAnnouncementViewModel.navigateUp()
             }) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
@@ -307,7 +352,7 @@ private fun FormInput(
     val keyboardOptions = KeyboardOptions.Default.copy(
         keyboardType = keyboardType // Set the keyboard type to Phone
     )
-    var text by remember { mutableStateOf(currentValue) }
+    var text by remember(currentValue) { mutableStateOf(currentValue) }
     Column(modifier = Modifier
         .fillMaxWidth()
         .padding(8.dp, 16.dp, 8.dp, 8.dp)
@@ -318,7 +363,7 @@ private fun FormInput(
             onValueChange = {
                 if (it.length <= maxChar){
                     text = it
-                    onTextChange(text)
+                    onTextChange(it)
                 }
             },
 
@@ -445,9 +490,9 @@ private fun DateRangePickerSample(applyAnnouncementViewModel: ApplyAnnouncementV
                     showDateRangePicker = false
                     startDate = dateRangePickerState.selectedStartDateMillis!!
                     endDate = dateRangePickerState.selectedEndDateMillis!!
-                    applyAnnouncementViewModel.date.value = "${formatInputDateValue(startDate)}-${formatInputDateValue(endDate)}"
+                    applyAnnouncementViewModel.dateRange.value = "${formatInputDateValue(startDate)}-${formatInputDateValue(endDate)}"
                     //range = applyAnnouncementViewModel.date.value
-                    Log.d("zakres", applyAnnouncementViewModel.date.value)
+                    Log.d("zakres", applyAnnouncementViewModel.dateRange.value)
                 }) {
                     Text(text = "Confirm")
                 }
@@ -498,7 +543,7 @@ private fun DateRangePickerSample(applyAnnouncementViewModel: ApplyAnnouncementV
             )
         }
     }
-    DateInput(applyAnnouncementViewModel.date.value) {
+    DateInput(applyAnnouncementViewModel.dateRange.value) {
         showDateRangePicker = true
 
     }
@@ -561,9 +606,9 @@ private fun getDataColumn(
     return null
 }
 
-private fun codePathFile(path: String): String {
-    return path.replace("/", "*")
-}
+//private fun codePathFile(path: String): String {
+//    return path.replace("/", "*")
+//}
 
 private fun decodePathFile(codedPath: String): String {
     return codedPath.replace("*", "/")

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "994123598354",
+    "project_id": "quick-adoption",
+    "storage_bucket": "quick-adoption.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:994123598354:android:5282f77e6af49231cae6cb",
+        "android_client_info": {
+          "package_name": "pl.lbiio.quickadoption"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhg3XeWs3YkoNxiohqlErFedpMiOMmEYc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

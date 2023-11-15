@@ -2,8 +2,6 @@ package pl.lbiio.quickadoption
 
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -17,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,7 +44,6 @@ import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.rememberBackdropScaffoldState
 import androidx.compose.material.Button
-import androidx.compose.material.Card
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
@@ -71,10 +67,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import pl.lbiio.quickadoption.data.OwnAnnouncement
 import pl.lbiio.quickadoption.models.TabbedAnnouncementsViewModel
 import pl.lbiio.quickadoption.support.RangeDateFormatter
 import java.text.SimpleDateFormat
@@ -85,70 +79,17 @@ import androidx.compose.material3.DatePickerColors
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.launch
-import pl.lbiio.quickadoption.data.PublicAnnouncement
+import pl.lbiio.quickadoption.data.OwnAnnouncementListItem
+import pl.lbiio.quickadoption.data.PublicAnnouncementDetails
+import pl.lbiio.quickadoption.data.PublicAnnouncementListItem
 import java.time.LocalDate
 
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun TabbedAnnouncementsScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
-
-
-//    BackdropScaffold(
-//        scaffoldState = scaffoldState,
-//        gesturesEnabled = true,
-//        appBar =  {
-//            SetMainActivityTopBar()
-////            TopAppBar(
-////                title = { Text("Backdrop") },
-////                navigationIcon = {
-////                    if (scaffoldState.isConcealed) {
-////                        IconButton(
-////                            onClick = {
-////                                scope.launch { scaffoldState.reveal() }
-////                            }
-////                        ) {
-////                            Icon(
-////                                Icons.Default.Menu,
-////                                contentDescription = "Menu"
-////                            )
-////                        }
-////                    } else {
-////                        IconButton(
-////                            onClick = {
-////                                scope.launch { scaffoldState.conceal()}
-////                            }
-////                        ) {
-////                            Icon(
-////                                Icons.Default.Close,
-////                                contentDescription = "Close"
-////                            )
-////                        }
-////                    }
-////                },
-////                elevation = 0.dp,
-////                backgroundColor = Color.Transparent
-////            )
-//        },
-//        backLayerContent = {
-//            Column{
-//                Text(text = "Menu Item 1", modifier = Modifier.padding(8.dp), color = Color.White)
-//                Text(text = "Menu Item 1", modifier = Modifier.padding(8.dp), color = Color.White)
-//
-//            }
-//        },
-//        frontLayerContent = {
-//            TabbedAnnouncementsContent(tabbedAnnouncementsViewModel, scaffoldState)
-//
-//        },
-//        peekHeight = 60.dp,
-//
-//
-//        ) {
-//
-//    }
-
 
     Scaffold(
         topBar = {
@@ -189,6 +130,10 @@ private fun SetMainActivityTopBar() {
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
+   LaunchedEffect(Unit){
+       tabbedAnnouncementsViewModel.populateOwnAnnouncementsList()
+   }
+
     var tabIndex by remember { mutableIntStateOf(0) }
 
     val tabs = listOf("Own", "Public")
@@ -230,10 +175,10 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
                         .fillMaxWidth()
                         .padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    SearchField("Country", Icons.Filled.MyLocation) {
+                    SearchField("Country", Icons.Filled.MyLocation, tabbedAnnouncementsViewModel.country.value) {
                         tabbedAnnouncementsViewModel.country.value = it
                     }
-                    SearchField("City", Icons.Filled.LocationCity) {
+                    SearchField("City", Icons.Filled.LocationCity, tabbedAnnouncementsViewModel.city.value) {
                         tabbedAnnouncementsViewModel.city.value = it
                     }
                     DateRangePickerSample(tabbedAnnouncementsViewModel)
@@ -247,7 +192,7 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
                         ),
                         onClick = {
                             if (tabbedAnnouncementsViewModel.country.value.isNotEmpty() && tabbedAnnouncementsViewModel.city.value.isNotEmpty() && tabbedAnnouncementsViewModel.dateRange.value.isNotEmpty()) {
-                                tabbedAnnouncementsViewModel.search()
+                                tabbedAnnouncementsViewModel.populatePublicAnnouncementsList()
                                 scope.launch {
                                     scaffoldState.conceal()
                                 }
@@ -258,7 +203,6 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
-
                         }) {
                         Text(text = "Search")
                     }
@@ -319,39 +263,10 @@ private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel
                     style = MaterialTheme.typography.subtitle1
                 )
                 Spacer(Modifier.width(12.dp))
-                androidx.compose.material.Text("3 items".uppercase())
+                androidx.compose.material.Text("${tabbedAnnouncementsViewModel.ownAnnouncementsList.value.size} items".uppercase())
             }
 
-            val animals = listOf<OwnAnnouncement>(
-                OwnAnnouncement(
-                    1L,
-                    101L,
-                    "Alex",
-                    "Dog",
-                    "Labrador",
-                    "11.08.2023-23.08.2023",
-                    "Bones, Meat",
-                    "https:**upload.wikimedia.org*wikipedia*commons*thumb*3*34*Labrador_on_Quantock_%282175262184%29.jpg*800px-Labrador_on_Quantock_%282175262184%29.jpg",
-                    54L,
-                    true,
-                    5
-                ),
-                OwnAnnouncement(
-                    1L,
-                    102L,
-                    "Dorry",
-                    "Parrot",
-                    "Ara",
-                    "08.11.2023 - 17.11.2023",
-                    "Fruits, Vegetables",
-                    "https:**delasign.com*delasignBlack.png",
-                    57L,
-                    false,
-                    12
-                )
-            )
-
-            animals.forEach {
+            tabbedAnnouncementsViewModel.ownAnnouncementsList.value.forEach {
                 OwnAnnouncementListItem(
                     it,
                     { announcementId, name ->
@@ -392,50 +307,45 @@ private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun PublicScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
-    BoxWithConstraints(
-        Modifier.fillMaxSize()
-    ) {
         Column(
             Modifier
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 64.dp)
         ) {
-            val announcements = listOf(
-                PublicAnnouncement(
-                    1L,
-                    2L,
-                    "Alex",
-                    "Dog",
-                    "Labrador",
-                    "11.08.2023-23.08.2023",
-                    "fish, meat",
-                    "https:**fajnepodroze.pl*wp-content*uploads*2022*12*jezyk-psa.jpg",
-                    "Poland",
-                    "Warsaw"
-                )
-            )
 
-            announcements.forEach { announcement ->
-                PublicAnnouncement(announcement) { animalId ->
-                    tabbedAnnouncementsViewModel.navigateToPublicOffer(animalId)
+//            val announcements = listOf(
+//                PublicAnnouncementListItem(
+//                    1L,
+//                    "Alex",
+//                    "Dog",
+//                    "Labrador",
+//                    "11.12.2023-19.12.2023",
+//                    "https://storage.googleapis.com/quick-adoption.appspot.com/images/FZUQgiYfWlY8gmZwlNIl3SPmRoK2",
+//                    "Poland",
+//                    "Warsaw"
+//                )
+//            )
+
+
+            tabbedAnnouncementsViewModel.publicAnnouncementsList.value.forEach { announcement ->
+                PublicAnnouncement(announcement) { announcementId ->
+                    tabbedAnnouncementsViewModel.navigateToPublicOffer(announcementId)
                 }
             }
 
         }
-
-    }
 }
 
 
 @Composable
 private fun PublicAnnouncement(
-    announcement: PublicAnnouncement,
-    onItemClick: (animalId: Long) -> Unit,
+    announcement: PublicAnnouncementListItem,
+    onItemClick: (announcementId: Long) -> Unit,
 ) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable { onItemClick(announcement.animalId) },
+            .clickable { onItemClick(announcement.announcementID) },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
@@ -448,9 +358,9 @@ private fun PublicAnnouncement(
             ) {
                 Spacer(Modifier.width(8.dp))
                 AsyncImage(
-                    model = decodePathFile(announcement.artwork),
+                    model = announcement.animalImage,
                     contentDescription = "",
-                    contentScale = ContentScale.FillHeight,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .height(60.dp)
                         .width(60.dp)
@@ -469,7 +379,7 @@ private fun PublicAnnouncement(
                     ) {
 
                         Text(
-                            text = "${announcement.name} - ${announcement.species} - ${announcement.breed}",
+                            text = "${announcement.animalName} - ${announcement.species} - ${announcement.breed}",
                             style = MaterialTheme.typography.body1,
                         )
 
@@ -492,9 +402,9 @@ private fun PublicAnnouncement(
 
 @Composable
 private fun OwnAnnouncementListItem(
-    ownAnnouncement: OwnAnnouncement,
-    onItemClick: (animalId: Long, name: String) -> Unit,
-    onEditClick: (ownAnnouncement: OwnAnnouncement) -> Unit,
+    ownAnnouncementListItem: OwnAnnouncementListItem,
+    onItemClick: (announcementId: Long, name: String) -> Unit,
+    onEditClick: (announcementId: Long) -> Unit,
     onRemoveClick: (animalId: Long) -> Unit,
 ) {
     val openDialog = remember { mutableStateOf(false) }
@@ -536,7 +446,7 @@ private fun OwnAnnouncementListItem(
                             .padding(4.dp, 0.dp, 8.dp, 0.dp),
                         onClick = {
                             openDialog.value = false
-                            onRemoveClick(ownAnnouncement.animalId)
+                            onRemoveClick(ownAnnouncementListItem.announcementID)
                         }
                     ) {
                         androidx.compose.material.Text("OK")
@@ -549,7 +459,12 @@ private fun OwnAnnouncementListItem(
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable { onItemClick(ownAnnouncement.animalId, ownAnnouncement.name) },
+            .clickable {
+                onItemClick(
+                    ownAnnouncementListItem.announcementID,
+                    ownAnnouncementListItem.animalName
+                )
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
@@ -562,9 +477,9 @@ private fun OwnAnnouncementListItem(
             ) {
                 Spacer(Modifier.width(8.dp))
                 AsyncImage(
-                    model = decodePathFile(ownAnnouncement.artwork),
+                    model = decodePathFile(ownAnnouncementListItem.animalImage),
                     contentDescription = "",
-                    contentScale = ContentScale.FillHeight,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .height(60.dp)
                         .width(60.dp)
@@ -583,12 +498,12 @@ private fun OwnAnnouncementListItem(
                     ) {
 
                         Text(
-                            text = "Name: ${ownAnnouncement.name}\nSpecies: ${ownAnnouncement.species}\nBreed: ${ownAnnouncement.breed}",
+                            text = "Name: ${ownAnnouncementListItem.animalName}\nSpecies: ${ownAnnouncementListItem.species}\nBreed: ${ownAnnouncementListItem.breed}",
                             style = MaterialTheme.typography.body1,
                         )
 
                         Text(
-                            text = "Period: ${ownAnnouncement.dateRange}",
+                            text = "Period: ${ownAnnouncementListItem.dateRange}",
                             style = MaterialTheme.typography.subtitle2,
                         )
 
@@ -596,9 +511,9 @@ private fun OwnAnnouncementListItem(
 
                     //Card(elevation = 0.dp, backgroundColor = pl.lbiio.quickadoption.ui.theme.Salmon, border = BorderStroke(1.dp, Color.Gray), shape = RoundedCornerShape(30.dp)) {
                     Text(
-                        color = if (ownAnnouncement.hasNewOffer) Color.Red else Color.Gray,
+                        color = if (ownAnnouncementListItem.hasNewOffer) Color.Red else Color.Gray,
                         modifier = Modifier.padding(3.dp),
-                        text = ownAnnouncement.numberOfOffers.toString()
+                        text = ownAnnouncementListItem.numberOfOffers.toString()
                     )
                     //}
                     var expanded by remember { mutableStateOf(false) }
@@ -619,7 +534,7 @@ private fun OwnAnnouncementListItem(
                             DropdownMenuItem(onClick =
                             {
                                 expanded = !expanded
-                                onEditClick(ownAnnouncement)
+                                onEditClick(ownAnnouncementListItem.announcementID)
                             })
                             {
                                 Text("Edit")
@@ -645,9 +560,10 @@ private fun OwnAnnouncementListItem(
 private fun SearchField(
     placeholder: String,
     icon: ImageVector,
+    currentValue: String,
     onTextChange: (text: String) -> Unit
 ) {
-    var value by remember { mutableStateOf("") }
+    var value by remember { mutableStateOf(currentValue) }
 
     OutlinedTextField(
         modifier = Modifier

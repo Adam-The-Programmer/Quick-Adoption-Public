@@ -110,13 +110,12 @@ class LoginActivity : ComponentActivity() {
                 ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.READ_EXTERNAL_STORAGE
-                ),
-
+                ))
+            selfPermissions.add(
                 ContextCompat.checkSelfPermission(
                     this,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
-            )
+                ))
         }
 
 

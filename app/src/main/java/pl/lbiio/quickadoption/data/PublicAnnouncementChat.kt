@@ -1,13 +1,15 @@
 package pl.lbiio.quickadoption.data
 
 data class PublicAnnouncementChat(
-    val chatId: Long,
-    val announcementId: Long,
-    val ownerId: Long,
+    val chatID: String,
+    val announcementID: Long,
+    val ownerID: String,
     val name: String,
     val surname: String,
-    val artwork: String,
-    val lastMessage: String,
+    val profileImage: String,
+    val lastMessageContent: String,
+    val lastMessageContentType: String,
     val lastMessageTimestamp: Long,
+    val lastMessageAuthor: String,
     val isAccepted: Int
 )

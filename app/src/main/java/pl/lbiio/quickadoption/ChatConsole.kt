@@ -11,6 +11,8 @@ import android.os.Build
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.RatingBar
+
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,9 +22,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -37,12 +42,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.Card
 import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarOutline
+import androidx.compose.material.icons.filled.StarRate
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -61,9 +75,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import pl.lbiio.quickadoption.data.ChatMessage
 import pl.lbiio.quickadoption.models.ChatConsoleViewModel
+import pl.lbiio.quickadoption.ui.theme.PurpleBrownLight
+import pl.lbiio.quickadoption.ui.theme.SalmonWhite
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun ChatConsole(chatConsoleViewModel: ChatConsoleViewModel) {
@@ -98,8 +118,135 @@ private fun TopAppBarText(
     )
 }
 
+
 @Composable
 private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
+
+    val isAssigningDialogOpened = remember { mutableStateOf(false) }
+
+    if (isAssigningDialogOpened.value) {
+        AlertDialog(
+            onDismissRequest = {
+                isAssigningDialogOpened.value = false
+            },
+            title = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "Assigning keeper")
+                }
+            },
+            text = {
+                Text(text = "Do you want ${chatConsoleViewModel.potentialKeeperName.value} to be a keeper of your animal? \n\nThis operation cannot be undone")
+            },
+            buttons = {
+                Row(
+                    modifier = Modifier.padding(all = 8.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .padding(8.dp, 0.dp, 4.dp, 0.dp),
+                        onClick = {
+                            isAssigningDialogOpened.value = false
+                        }
+                    ) {
+                        Text("NO")
+                    }
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp, 0.dp, 8.dp, 0.dp),
+                        onClick = {
+                            isAssigningDialogOpened.value = false
+                            // DB operation
+                        }
+                    ) {
+                        Text("YES")
+                    }
+                }
+            }
+        )
+    }
+
+
+    val isRatingDialogOpened = remember { mutableStateOf(false) }
+
+    if (isRatingDialogOpened.value) {
+        AlertDialog(
+            onDismissRequest = {
+                isRatingDialogOpened.value = false
+            },
+            text = {
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+
+                    Text(text = "Rating ${chatConsoleViewModel.potentialKeeperName.value}", style = MaterialTheme.typography.subtitle1.copy(PurpleBrownLight))
+
+                    var myRating by remember { mutableIntStateOf(0) }
+                    RatingBar(
+                        currentRating = myRating,
+                        onRatingChanged = { myRating = it }
+                    )
+
+                    var value by remember { mutableStateOf("") }
+
+                    OutlinedTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(0.dp, 8.dp, 0.dp, 0.dp),
+                        value = value,
+                        placeholder = {
+                            Text(
+                                "Type your opinion",
+                                style = MaterialTheme.typography.subtitle1.copy(PurpleBrownLight)
+                            )
+                        },
+                        onValueChange = {
+                            value = it
+                        },
+                    )
+                }
+
+
+            },
+            buttons = {
+                Row(
+                    modifier = Modifier.padding(all = 8.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .padding(8.dp, 0.dp, 4.dp, 0.dp),
+                        onClick = {
+                            isRatingDialogOpened.value = false
+                        }
+                    ) {
+                        Text("Cancel")
+                    }
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp, 0.dp, 8.dp, 0.dp),
+                        onClick = {
+                            isRatingDialogOpened.value = false
+                            // DB operation
+                        }
+                    ) {
+                        Text("Send")
+                    }
+                }
+            }
+        )
+    }
+
+
     TopAppBar(
         title = {
             TopAppBarText(text = "Chat")
@@ -109,60 +256,82 @@ private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
                 Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
             }
         },
+        actions = {
+            if(chatConsoleViewModel.isChatOwn.value){
+                IconButton(onClick = {
+                    chatConsoleViewModel.navigateToOpinions()
+                }) {
+                    Icon(Icons.Default.Info, null, tint = Color.White)
+                }
+                IconButton(onClick = {
+                    isAssigningDialogOpened.value = true
+                }) {
+                    Icon(Icons.Default.Check, null, tint = Color.White)
+                }
+                IconButton(onClick = {
+                    isRatingDialogOpened.value = true
+                }) {
+                    Icon(Icons.Default.StarRate, null, tint = Color.White)
+                }
+            }
+        },
         elevation = 4.dp
     )
 }
 
 @Composable
 fun ChatConsoleContent(chatConsoleViewModel: ChatConsoleViewModel) {
-    val messages = listOf<ChatMessage>(
-        ChatMessage("g903r93rn9863", "Hello Adam", "text", 1696174281515L),
-        ChatMessage("6t8b9ae639113", "Hi there!", "text", 1696174281550L),
-        ChatMessage(
-            "g903r93rn9863",
-            "https://bi.im-g.pl/im/52/f5/1b/z29318482Q,WCup-World-Cup-Photo-Gallery.jpg",
-            "image",
-            1696174281590L
-        )
-
-    )
     Column(
         Modifier
             .verticalScroll(rememberScrollState())
             .padding(bottom = 8.dp)
     ) {
-        messages.forEach {
+        chatConsoleViewModel.conversation.value.forEach {
             Message(
                 isOwn = it.UID == "6t8b9ae639113",
                 content = it.content,
-                contentType = it.contentType
+                contentType = it.contentType,
+                potentialKeeperImage = chatConsoleViewModel.potentialKeeperImage.value,
+                howLongAgo = timeSinceLastMessage(it.timestamp)
             )
         }
     }
 
 }
 
-@Preview
+
 @Composable
 private fun Message(
-    isOwn: Boolean = true,
-    content: String = "hello adam",
-    contentType: String = "test",
-    howLongAgo: String = "1h"
+    isOwn: Boolean,
+    content: String,
+    contentType: String,
+    potentialKeeperImage: String,
+    howLongAgo: String
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(6.dp),
         horizontalArrangement = if (isOwn) Arrangement.End else Arrangement.Start
     ) {
+        if(!isOwn){
+            Image(
+                painter = rememberAsyncImagePainter(decodePathFile(potentialKeeperImage)),
+                contentDescription = "",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(50.dp))
+
+            )
+        }
         Card(
             elevation = 10.dp,
             modifier = Modifier.padding(10.dp),
             backgroundColor = if (isOwn) pl.lbiio.quickadoption.ui.theme.PurpleBrown else Color.White,
             contentColor = if (isOwn) Color.White else pl.lbiio.quickadoption.ui.theme.PurpleBrown,
             shape = RoundedCornerShape(
-                topStart = 48f,
+                topStart =if(isOwn) 48f else 0f,
                 topEnd = 48f,
-                bottomStart = if (isOwn) 48f else 0f,
+                bottomStart = 48f,
                 bottomEnd = if (isOwn) 0f else 48f
             )
         ) {
@@ -175,7 +344,7 @@ private fun Message(
 
             } else {
                 Column(horizontalAlignment = Alignment.End) {
-                    Box(Modifier.padding(10.dp)){
+                    Box(Modifier.padding(10.dp)) {
                         AsyncImage(
                             model = content,
                             contentDescription = "",
@@ -270,12 +439,13 @@ private fun MessageSenderConsole(send: (value: String, type: String) -> Unit) {
                             },
                         tint = pl.lbiio.quickadoption.ui.theme.PurpleBrown
                     )
-                    Icon(Icons.AutoMirrored.Filled.Send, null, modifier = Modifier
-                        .padding(6.dp, 0.dp, 8.dp, 0.dp)
-                        .clickable {
-                            send(value, "text")
-                            value = ""
-                        }, tint = pl.lbiio.quickadoption.ui.theme.PurpleBrown
+                    Icon(
+                        Icons.AutoMirrored.Filled.Send, null, modifier = Modifier
+                            .padding(6.dp, 0.dp, 8.dp, 0.dp)
+                            .clickable {
+                                send(value, "text")
+                                value = ""
+                            }, tint = pl.lbiio.quickadoption.ui.theme.PurpleBrown
                     )
                 }
             },
@@ -412,4 +582,54 @@ private fun getDataColumn(
         cursor?.close()
     }
     return null
+}
+
+@Composable
+private fun RatingBar(
+    maxRating: Int = 5,
+    currentRating: Int,
+    onRatingChanged: (Int) -> Unit,
+    starsColor: Color = Color.Yellow
+) {
+    Row(modifier = Modifier.padding(0.dp, 16.dp, 0.dp, 0.dp)) {
+        for (i in 1..maxRating) {
+            Icon(
+                imageVector = if (i <= currentRating) Icons.Filled.Star
+                else Icons.Filled.StarOutline,
+                contentDescription = null,
+                tint = if (i <= currentRating) starsColor
+                else Color.Unspecified,
+                modifier = Modifier
+                    .clickable { onRatingChanged(i) }
+                    .padding(4.dp)
+            )
+        }
+    }
+}
+
+private fun decodePathFile(codedPath: String): String {
+    return codedPath.replace("*", "/")
+}
+
+private fun timeSinceLastMessage(timestamp: Long): String {
+    val currentTimeMillis = System.currentTimeMillis()
+    val timeDifferenceMillis = currentTimeMillis - timestamp
+
+    val seconds = TimeUnit.MILLISECONDS.toSeconds(timeDifferenceMillis)
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(timeDifferenceMillis)
+    val hours = TimeUnit.MILLISECONDS.toHours(timeDifferenceMillis)
+    val days = TimeUnit.MILLISECONDS.toDays(timeDifferenceMillis)
+
+    return when {
+        seconds < 60 -> "${seconds}s ago"
+        minutes < 60 -> "${minutes}min ago"
+        hours < 24 -> "${hours}h ago"
+        days < 365 -> "${days}d ago"
+        else -> {
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+            val calendar = Calendar.getInstance()
+            calendar.timeInMillis = timestamp
+            sdf.format(calendar.time)
+        }
+    }
 }

@@ -17,19 +17,28 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
 import androidx.compose.material.Divider
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Password
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,31 +50,103 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import kotlinx.coroutines.launch
 import pl.lbiio.quickadoption.models.LoginViewModel
+import pl.lbiio.quickadoption.models.PublicAnnouncementDetailsViewModel
 import pl.lbiio.quickadoption.ui.theme.PurpleBrown
+import pl.lbiio.quickadoption.ui.theme.PurpleBrownLight
 import pl.lbiio.quickadoption.ui.theme.Salmon
 
 @Composable
-fun PublicAnnouncementDetailScreen(animalId: Long) {
+fun PublicAnnouncementDetailScreen(publicAnnouncementDetailsViewModel: PublicAnnouncementDetailsViewModel) {
+    val isAdoptingDialogOpened = remember { mutableStateOf(false) }
+
+    if (isAdoptingDialogOpened.value) {
+        AlertDialog(
+            onDismissRequest = {
+                isAdoptingDialogOpened.value = false
+            },
+            text = {
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+
+                    Text(text = "Send message", style = MaterialTheme.typography.subtitle1.copy(
+                        PurpleBrownLight
+                    ))
+                    var value by remember { mutableStateOf("I want to adopt your pet") }
+
+                    OutlinedTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(0.dp, 8.dp, 0.dp, 0.dp),
+                        value = value,
+                        placeholder = {
+                            Text(
+                                "Type your message",
+                                style = MaterialTheme.typography.subtitle1.copy(PurpleBrownLight)
+                            )
+                        },
+                        onValueChange = {
+                            value = it
+                        },
+                    )
+                }
+
+
+            },
+            buttons = {
+                Row(
+                    modifier = Modifier.padding(all = 8.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .padding(8.dp, 0.dp, 4.dp, 0.dp),
+                        onClick = {
+                            isAdoptingDialogOpened.value = false
+                        }
+                    ) {
+                        Text("Cancel")
+                    }
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp, 0.dp, 8.dp, 0.dp),
+                        onClick = {
+                            isAdoptingDialogOpened.value = false
+                            // DB operation
+                        }
+                    ) {
+                        Text("Send")
+                    }
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
-            SetPublicAnnouncementDetailsTopBar()
+            SetPublicAnnouncementDetailsTopBar(publicAnnouncementDetailsViewModel)
         },
         backgroundColor = Color.White,
         content = {
             it.calculateBottomPadding()
             PublicAnnouncementDetailsContent(
-                animalImage = "https:**upload.wikimedia.org*wikipedia*commons*thumb*3*34*Labrador_on_Quantock_%282175262184%29.jpg*800px-Labrador_on_Quantock_%282175262184%29.jpg",
-                ownerImage = "https:**bi.im-g.pl*im*11*06*1a*z27288081IER,Alvaro-Soler---2.jpg",
-                date = "08.11.2023 - 23.11.2023",
-                description = "Alex is a calm dog which doesn't like staying alone in home",
-                food = "Fodder, Meat and Fish",
-                ownerDescription = "I look after my dog since 2018.\nSometimes I need a person who can take over from me",
+                animalImage = publicAnnouncementDetailsViewModel.animalImage.value,
+                ownerImage = publicAnnouncementDetailsViewModel.ownerImage.value,
+                date = publicAnnouncementDetailsViewModel.dateRange.value,
+                description = publicAnnouncementDetailsViewModel.description.value,
+                food = publicAnnouncementDetailsViewModel.food.value,
+                ownerDescription = publicAnnouncementDetailsViewModel.ownerDescription.value,
                 onApplyClick = {
-
+                    isAdoptingDialogOpened.value = true
                 }
             )
         },
@@ -86,10 +167,15 @@ private fun TopAppBarText(
 }
 
 @Composable
-private fun SetPublicAnnouncementDetailsTopBar() {
+private fun SetPublicAnnouncementDetailsTopBar(publicAnnouncementDetailsViewModel: PublicAnnouncementDetailsViewModel) {
     TopAppBar(
         title = {
             TopAppBarText(text = "Announcement Details")
+        },
+        navigationIcon = {
+            IconButton(onClick = { publicAnnouncementDetailsViewModel.navigateUp() }) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+            }
         },
         elevation = 4.dp
     )

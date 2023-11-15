@@ -39,7 +39,11 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.Card
+import androidx.compose.material.icons.outlined.QuestionMark
+import androidx.compose.material3.HorizontalDivider
 import pl.lbiio.quickadoption.models.PublicChatsListViewModel
+import pl.lbiio.quickadoption.ui.theme.PurpleBrownLight
 
 @Composable
 fun PublicAnnouncementsChatsScreen(publicChatsListViewModel: PublicChatsListViewModel) {
@@ -91,36 +95,42 @@ private fun PublicAnnouncementsChatsContent(publicChatsListViewModel: PublicChat
 
         val publicAnnouncementChats = listOf<PublicAnnouncementChat>(
             PublicAnnouncementChat(
-                1L,
+                "1",
                 12L,
-                20L,
+                "20",
                 "Christiano",
                 "Ronaldo",
                 "https://bi.im-g.pl/im/52/f5/1b/z29318482Q,WCup-World-Cup-Photo-Gallery.jpg",
                 "I can adopt your dog jhosowgwegu ugtpwrgwutg",
-                1696131451850L,
-                -1
+                "text",
+                1696161432450L,
+                "10",
+                1
             ),
             PublicAnnouncementChat(
-                2L,
+                "2",
                 12L,
-                23L,
+                "23",
                 "Adele",
                 "Adkins",
                 "https://bi.im-g.pl/im/d5/60/14/z21366229AMP,Adele.jpg",
                 "I will call you back!",
-                1696161432450L,
-                0
+                "text",
+                1696161434450L,
+                "16",
+                1
             ),
             PublicAnnouncementChat(
-                3L,
+                "3",
                 12L,
-                40L,
+                "24",
                 "Alvaro",
                 "Soler",
                 "https://bi.im-g.pl/im/11/06/1a/z27288081IER,Alvaro-Soler---2.jpg",
                 "See you!",
-                1696161439000L,
+                "text",
+                1696161432450L,
+                "10",
                 1
             )
         )
@@ -158,89 +168,101 @@ private fun PublicAnnouncementsChatsContent(publicChatsListViewModel: PublicChat
 @Composable
 private fun ChatsListItem(
     publicAnnouncementChat: PublicAnnouncementChat,
-    onItemClick: (chatId: Long) -> Unit,
+    onItemClick: (chatId: String) -> Unit,
 ) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable { onItemClick(publicAnnouncementChat.chatId) },
+            .clickable { onItemClick(publicAnnouncementChat.chatID) },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            Modifier.fillMaxWidth()
-        ) {
-            Divider(color = MaterialTheme.colors.onSecondary.copy(alpha = 0.3f))
-            Row(
-                Modifier.padding(vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Spacer(Modifier.width(8.dp))
-                AsyncImage(
-                    model = publicAnnouncementChat.artwork,
-                    contentDescription = "",
-                    contentScale = ContentScale.FillHeight,
-                    modifier = Modifier
-                        .height(60.dp)
-                        .width(60.dp)
-                        .clip(RoundedCornerShape(12.dp))
+//        Column(
+//            Modifier.fillMaxWidth()
+//        ) {
 
-                )
-                Spacer(Modifier.width(20.dp))
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+            Card(shape = RoundedCornerShape(8.dp), elevation = 10.dp, modifier = Modifier.padding(4.dp, 4.dp, 4.dp, 4.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically){
+                    Column(Modifier.fillMaxWidth(0.7f).padding(0.dp, 16.dp, 0.dp, 0.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(text = "Name - Breed - Species", style = MaterialTheme.typography.subtitle1.copy(PurpleBrownLight))
+                        Row(
+                            Modifier.padding(vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Spacer(Modifier.width(8.dp))
+                            AsyncImage(
+                                model = publicAnnouncementChat.profileImage,
+                                contentDescription = "",
+                                contentScale = ContentScale.FillHeight,
+                                modifier = Modifier
+                                    .height(60.dp)
+                                    .width(60.dp)
+                                    .clip(RoundedCornerShape(12.dp))
 
-                    Column(
-                        Modifier.padding(end = 16.dp)
-                    ) {
-
-                        androidx.compose.material3.Text(
-                            text = "${publicAnnouncementChat.name} ${publicAnnouncementChat.surname}",
-                            style = MaterialTheme.typography.subtitle2,
-                        )
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            androidx.compose.material3.Text(
-                                text = "${publicAnnouncementChat.name}: ",
-                                style = MaterialTheme.typography.caption,
                             )
+                            Spacer(Modifier.width(20.dp))
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
 
-                            androidx.compose.material3.Text(
-                                modifier = Modifier.fillMaxWidth(0.6f),
-                                text = publicAnnouncementChat.lastMessage,
-                                overflow = TextOverflow.Ellipsis,
-                                maxLines = 1,
-                                style = MaterialTheme.typography.body1
-                            )
+                                Column(
+                                    Modifier.padding(end = 16.dp)
+                                ) {
 
-                            Divider(modifier = Modifier.width(8.dp))
+                                    androidx.compose.material3.Text(
+                                        text = "${publicAnnouncementChat.name} ${publicAnnouncementChat.surname}",
+                                        style = MaterialTheme.typography.subtitle2,
+                                    )
 
-                            androidx.compose.material3.Text(
-                                modifier = Modifier.fillMaxWidth(0.4f),
-                                text = timeSinceLastMessage(publicAnnouncementChat.lastMessageTimestamp),
-                                style = MaterialTheme.typography.caption,
-                            )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        androidx.compose.material3.Text(
+                                            text = "${publicAnnouncementChat.name}: ",
+                                            style = MaterialTheme.typography.caption,
+                                        )
+
+                                        androidx.compose.material3.Text(
+                                            modifier = Modifier.fillMaxWidth(0.6f),
+                                            text = publicAnnouncementChat.lastMessageContent,
+                                            overflow = TextOverflow.Ellipsis,
+                                            maxLines = 1,
+                                            style = MaterialTheme.typography.body1
+                                        )
+
+                                        HorizontalDivider(modifier = Modifier.width(8.dp), thickness = 0.dp, color = Color.Transparent)
+
+
+                                    }
+                                }
+
+                                androidx.compose.material3.Text(
+                                    //modifier = Modifier.fillMaxWidth(0.4f),
+                                    text = timeSinceLastMessage(publicAnnouncementChat.lastMessageTimestamp),
+                                    style = MaterialTheme.typography.caption,
+                                )
+
+                            }
                         }
                     }
                     Icon(
-                        modifier = Modifier.padding(4.dp),
                         imageVector = when (publicAnnouncementChat.isAccepted) {
                             0 -> Icons.Outlined.Cancel
-                            else -> Icons.Outlined.Check
+                            1 -> Icons.Outlined.Check
+                            else -> Icons.Outlined.QuestionMark
                         },
                         contentDescription = null,
                         tint = when (publicAnnouncementChat.isAccepted) {
                             0 -> Color.Red
                             1 -> Color.Green
-                            else -> Color.Transparent
+                            else -> Color.Gray
                         }
                     )
                 }
             }
-        }
+
+
+        //}
     }
 }
 
