@@ -77,7 +77,7 @@ fun MainActivityNavigate() {
             PublicAnnouncementsChatsScreen(publicChatsListViewModel)
         }
         composable(destination = Destination.ChatConsoleScreen) { backStackEntry ->
-            chatConsoleViewModel.clearViewModel()
+            //chatConsoleViewModel.clearViewModel()
             backStackEntry.arguments?.apply {
                 val chatId = getString(Destination.ChatConsoleScreen.CHAT_ID_KEY)
                 val isChatOwn = getString(Destination.ChatConsoleScreen.IS_CHAT_OWN_KEY)
@@ -86,7 +86,7 @@ fun MainActivityNavigate() {
                     chatConsoleViewModel.chatId.value = chatId!!
                     chatConsoleViewModel.isChatOwn.value = isChatOwn.toBoolean()
                     //Log.d("wartosc", isChatOwn.toBoolean().toString())
-                    chatConsoleViewModel.initValues()
+                    //chatConsoleViewModel.initValues()
                     LaunchedEffect(Unit){
                         chatConsoleViewModel.listenToMessages()
                     }

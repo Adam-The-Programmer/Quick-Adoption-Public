@@ -1,6 +1,7 @@
 package pl.lbiio.quickadoption.repositories
 
 import android.util.Log
+import android.widget.Toast
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.firestore.ktx.firestore
@@ -18,10 +19,13 @@ class LoginRepository @Inject constructor() {
         return QuickAdoptionApp.getAuth()?.signInWithEmailAndPassword(email, password)!!
             .addOnSuccessListener {
                 Log.d("login success", "yes")
+            }.addOnFailureListener {
+                // handle errors credentials etc
             }
     }
 
     fun canLogin(inputEmail: String, callback: (Boolean) -> Unit) {
+        Log.d("canLogin", "OK")
         db.collection("users")
             .whereEqualTo("email", inputEmail)
             .get()

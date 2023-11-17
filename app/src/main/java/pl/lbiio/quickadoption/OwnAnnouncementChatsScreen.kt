@@ -275,7 +275,7 @@ private fun ChatsListItem(
                 AsyncImage(
                     model = ownAnnouncementChat.profileImage,
                     contentDescription = "",
-                    contentScale = ContentScale.FillHeight,
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .height(60.dp)
                         .width(60.dp)

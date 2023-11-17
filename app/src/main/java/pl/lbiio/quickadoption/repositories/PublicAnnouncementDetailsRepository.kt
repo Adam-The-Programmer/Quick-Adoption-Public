@@ -1,11 +1,14 @@
 package pl.lbiio.quickadoption.repositories
 
+import android.util.Log
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.gson.GsonBuilder
 import io.reactivex.Completable
 import io.reactivex.Observable
 import pl.lbiio.quickadoption.QuickAdoptionApp
 import pl.lbiio.quickadoption.data.ApplicationForAdoptionDTO
+import pl.lbiio.quickadoption.data.ChatMessage
 import pl.lbiio.quickadoption.data.OwnAnnouncement
 import pl.lbiio.quickadoption.data.PublicAnnouncementDetails
 import pl.lbiio.quickadoption.services.ApiService
@@ -22,15 +25,20 @@ class PublicAnnouncementDetailsRepository @Inject constructor(private val apiSer
         return apiService.applyForAdoption(applicationForAdoptionDTO)
     }
 
-    fun createDocumentAndGetID(content: String, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
-        val data = hashMapOf(
-            "UID" to QuickAdoptionApp.getCurrentUserId(),
-            "Content" to content,
-            "ContentType" to "text",
-            "Timestamp" to System.currentTimeMillis()
+    fun createDocumentAndGetID(Content: String, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
+
+        val gson = GsonBuilder().create()
+        val rawMessage = ChatMessage(
+            QuickAdoptionApp.getCurrentUserId()!!, Content, "text", System.currentTimeMillis()
+        )
+
+        //Log.d("json", gson.toJson(rawMessage).toString())
+
+        val message = hashMapOf(
+            "${System.currentTimeMillis()}" to gson.toJson(rawMessage).toString(),
         )
         db.collection("chats")
-            .add(data)
+            .add(message)
             .addOnSuccessListener { documentReference ->
                 val documentID = documentReference.id
                 onSuccess(documentID)
@@ -38,6 +46,7 @@ class PublicAnnouncementDetailsRepository @Inject constructor(private val apiSer
             .addOnFailureListener { e ->
                 onFailure(e)
             }
+
     }
 
 

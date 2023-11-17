@@ -29,15 +29,15 @@ class ChatConsoleViewModel @Inject constructor(private val chatConsoleRepository
 //        this.navController = navController
 //    }
 
-    fun initValues(){
-        conversation.value = listOf(
-            ChatMessage("g903r93rn9863", "Hello Adam", "text", 1696174281515L),
-            ChatMessage("6t8b9ae639113", "Hi there!", "text", 1696174281550L),
-            ChatMessage("g903r93rn9863", "https://bi.im-g.pl/im/52/f5/1b/z29318482Q,WCup-World-Cup-Photo-Gallery.jpg", "image", 1696174281590L)
-        )
-        potentialKeeperImage.value = "https://bi.im-g.pl/im/52/f5/1b/z29318482Q,WCup-World-Cup-Photo-Gallery.jpg"
-        potentialKeeperName.value = "Christiano"
-    }
+//    fun initValues(){
+//        conversation.value = listOf(
+//            ChatMessage("g903r93rn9863", "Hello Adam", "text", 1696174281515L),
+//            ChatMessage("6t8b9ae639113", "Hi there!", "text", 1696174281550L),
+//            ChatMessage("g903r93rn9863", "https://bi.im-g.pl/im/52/f5/1b/z29318482Q,WCup-World-Cup-Photo-Gallery.jpg", "image", 1696174281590L)
+//        )
+//        potentialKeeperImage.value = "https://bi.im-g.pl/im/52/f5/1b/z29318482Q,WCup-World-Cup-Photo-Gallery.jpg"
+//        potentialKeeperName.value = "Christiano"
+//    }
 
     fun navigateUp() {
         //navController?.navigateUp()
@@ -57,18 +57,18 @@ class ChatConsoleViewModel @Inject constructor(private val chatConsoleRepository
 
     fun listenToMessages(){
         chatConsoleRepository.listenToMessages(chatId.value) {
-            conversation.value = it
+            conversation.value = it.toMutableList()
         }
     }
 
     fun uploadMessage(content: String, contentType: String){
         if(contentType=="image"){
             chatConsoleRepository.uploadImageToFirebase("${System.currentTimeMillis()}-${chatId.value}", content){url->
-                chatConsoleRepository.uploadMessage(url, contentType, "GD1xpVfmb4Z4zdmvBVFT")
+                chatConsoleRepository.uploadMessage(url, contentType, chatId.value)
             }
         }
         else{
-            chatConsoleRepository.uploadMessage(content, contentType, "GD1xpVfmb4Z4zdmvBVFT")
+            chatConsoleRepository.uploadMessage(content, contentType, chatId.value)
         }
 
     }

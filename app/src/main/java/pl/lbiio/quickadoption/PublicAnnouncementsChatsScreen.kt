@@ -42,6 +42,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.Card
 import androidx.compose.material.icons.outlined.QuestionMark
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.runtime.LaunchedEffect
 import pl.lbiio.quickadoption.models.PublicChatsListViewModel
 import pl.lbiio.quickadoption.ui.theme.PurpleBrownLight
 
@@ -93,47 +94,51 @@ private fun PublicAnnouncementsChatsContent(publicChatsListViewModel: PublicChat
             .fillMaxSize(),
     ) {
 
-        val publicAnnouncementChats = listOf<PublicAnnouncementChat>(
-            PublicAnnouncementChat(
-                "1",
-                12L,
-                "20",
-                "Christiano",
-                "Ronaldo",
-                "https://bi.im-g.pl/im/52/f5/1b/z29318482Q,WCup-World-Cup-Photo-Gallery.jpg",
-                "I can adopt your dog jhosowgwegu ugtpwrgwutg",
-                "text",
-                1696161432450L,
-                "10",
-                1
-            ),
-            PublicAnnouncementChat(
-                "2",
-                12L,
-                "23",
-                "Adele",
-                "Adkins",
-                "https://bi.im-g.pl/im/d5/60/14/z21366229AMP,Adele.jpg",
-                "I will call you back!",
-                "text",
-                1696161434450L,
-                "16",
-                1
-            ),
-            PublicAnnouncementChat(
-                "3",
-                12L,
-                "24",
-                "Alvaro",
-                "Soler",
-                "https://bi.im-g.pl/im/11/06/1a/z27288081IER,Alvaro-Soler---2.jpg",
-                "See you!",
-                "text",
-                1696161432450L,
-                "10",
-                1
-            )
-        )
+//        val publicAnnouncementChats = listOf<PublicAnnouncementChat>(
+//            PublicAnnouncementChat(
+//                "1",
+//                12L,
+//                "20",
+//                "Christiano",
+//                "Ronaldo",
+//                "https://bi.im-g.pl/im/52/f5/1b/z29318482Q,WCup-World-Cup-Photo-Gallery.jpg",
+//                "I can adopt your dog jhosowgwegu ugtpwrgwutg",
+//                "text",
+//                1696161432450L,
+//                "10",
+//                1
+//            ),
+//            PublicAnnouncementChat(
+//                "2",
+//                12L,
+//                "23",
+//                "Adele",
+//                "Adkins",
+//                "https://bi.im-g.pl/im/d5/60/14/z21366229AMP,Adele.jpg",
+//                "I will call you back!",
+//                "text",
+//                1696161434450L,
+//                "16",
+//                1
+//            ),
+//            PublicAnnouncementChat(
+//                "3",
+//                12L,
+//                "24",
+//                "Alvaro",
+//                "Soler",
+//                "https://bi.im-g.pl/im/11/06/1a/z27288081IER,Alvaro-Soler---2.jpg",
+//                "See you!",
+//                "text",
+//                1696161432450L,
+//                "10",
+//                1
+//            )
+//        )
+        LaunchedEffect(Unit){
+            publicChatsListViewModel.fillListOfChats()
+        }
+
 
         Column(
             Modifier
@@ -153,7 +158,7 @@ private fun PublicAnnouncementsChatsContent(publicChatsListViewModel: PublicChat
                 Spacer(Modifier.width(12.dp))
                 androidx.compose.material.Text("3 items".uppercase())
             }
-            publicAnnouncementChats.forEach {
+            publicChatsListViewModel.publicChats.value.forEach {
                 ChatsListItem(publicAnnouncementChat = it, onItemClick = { chatId ->
                     publicChatsListViewModel.navigateToChat(chatId)
                 })
@@ -183,7 +188,7 @@ private fun ChatsListItem(
             Card(shape = RoundedCornerShape(8.dp), elevation = 10.dp, modifier = Modifier.padding(4.dp, 4.dp, 4.dp, 4.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically){
                     Column(Modifier.fillMaxWidth(0.7f).padding(0.dp, 16.dp, 0.dp, 0.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "Name - Breed - Species", style = MaterialTheme.typography.subtitle1.copy(PurpleBrownLight))
+                        Text(text = "${publicAnnouncementChat.animalName} - ${publicAnnouncementChat.breed} - ${publicAnnouncementChat.species}", style = MaterialTheme.typography.subtitle1.copy(PurpleBrownLight))
                         Row(
                             Modifier.padding(vertical = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -193,7 +198,7 @@ private fun ChatsListItem(
                             AsyncImage(
                                 model = publicAnnouncementChat.profileImage,
                                 contentDescription = "",
-                                contentScale = ContentScale.FillHeight,
+                                contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .height(60.dp)
                                     .width(60.dp)
@@ -246,13 +251,13 @@ private fun ChatsListItem(
                         }
                     }
                     Icon(
-                        imageVector = when (publicAnnouncementChat.isAccepted) {
+                        imageVector = when (publicAnnouncementChat.isChatAccepted) {
                             0 -> Icons.Outlined.Cancel
                             1 -> Icons.Outlined.Check
                             else -> Icons.Outlined.QuestionMark
                         },
                         contentDescription = null,
-                        tint = when (publicAnnouncementChat.isAccepted) {
+                        tint = when (publicAnnouncementChat.isChatAccepted) {
                             0 -> Color.Red
                             1 -> Color.Green
                             else -> Color.Gray

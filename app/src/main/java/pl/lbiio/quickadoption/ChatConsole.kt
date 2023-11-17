@@ -55,6 +55,7 @@ import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.filled.StarRate
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -97,9 +98,10 @@ fun ChatConsole(chatConsoleViewModel: ChatConsoleViewModel) {
             }
         },
         backgroundColor = Color.White,
-        content = {
-            it.calculateBottomPadding()
-            ChatConsoleContent(chatConsoleViewModel)
+        content = {innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)) {
+                ChatConsoleContent(chatConsoleViewModel)
+            }
         },
     )
 }
@@ -281,14 +283,19 @@ private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
 
 @Composable
 fun ChatConsoleContent(chatConsoleViewModel: ChatConsoleViewModel) {
+
+    LaunchedEffect(Unit){
+        chatConsoleViewModel.listenToMessages()
+    }
+
     Column(
         Modifier
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 8.dp)
+            .padding(bottom = 20.dp)
     ) {
         chatConsoleViewModel.conversation.value.forEach {
             Message(
-                isOwn = it.UID == "6t8b9ae639113",
+                isOwn = it.UID == QuickAdoptionApp.getCurrentUserId(),
                 content = it.content,
                 contentType = it.contentType,
                 potentialKeeperImage = chatConsoleViewModel.potentialKeeperImage.value,
@@ -309,7 +316,9 @@ private fun Message(
     howLongAgo: String
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(6.dp),
         horizontalArrangement = if (isOwn) Arrangement.End else Arrangement.Start
     ) {
         if(!isOwn){

@@ -3,6 +3,7 @@ package pl.lbiio.quickadoption.repositories
 import android.net.Uri
 import android.util.Log
 import com.google.android.gms.tasks.Task
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
@@ -67,7 +68,7 @@ class ChatConsoleRepository @Inject constructor(private val apiService: ApiServi
         val query = db.collection("chats")
             .document(ChatID)
 
-        query.addSnapshotListener { snapshot, e ->
+        query.addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, e ->
             if (e != null) {
                 // Handle errors here if needed
                 return@addSnapshotListener
@@ -75,10 +76,12 @@ class ChatConsoleRepository @Inject constructor(private val apiService: ApiServi
 
             if (snapshot != null && snapshot.exists()) {
                 val data = snapshot.data
+                Log.d("dane", data.toString())
 
                 val newMessages = mutableListOf<ChatMessage>()
 
                 data?.values?.forEach { value ->
+                    Log.d("object", value.toString())
                     val gson = Gson()
                     val messageType = object : TypeToken<ChatMessage>() {}.type
                     val message: ChatMessage = gson.fromJson(value.toString(), messageType)
@@ -86,7 +89,7 @@ class ChatConsoleRepository @Inject constructor(private val apiService: ApiServi
                 }
 
                 messages.clear()
-                messages.addAll(newMessages)
+                messages.addAll(newMessages.sortedBy { it.timestamp })
                 onMessagesChanged(messages)
             }
         }

@@ -21,8 +21,8 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(private val loginRepository: LoginRepository) :
     ViewModel() {
     private var appNavigator: AppNavigator? = null
-    val email: MutableState<String> = mutableStateOf("")
-    val password: MutableState<String> = mutableStateOf("")
+    val email: MutableState<String> = mutableStateOf("adam314pi@gmail.com")
+    val password: MutableState<String> = mutableStateOf("Adam1234@pi")
     var isFinished: MutableState<Boolean> = mutableStateOf(true)
 
 //    init{
@@ -52,14 +52,21 @@ class LoginViewModel @Inject constructor(private val loginRepository: LoginRepos
     }
 
     private fun login(email: String, password: String, ctx: Context) {
-        loginRepository.login(email, password).addOnSuccessListener {
-            if (!QuickAdoptionApp.getCurrentUser()!!.isEmailVerified) {
-                QuickAdoptionApp.getCurrentUser()!!.sendEmailVerification()
-                Toast.makeText(ctx, "We sent verification email on your E-mail", Toast.LENGTH_SHORT)
-                    .show()
+        viewModelScope.launch {
+            loginRepository.login(email, password).addOnSuccessListener {
+                if (!QuickAdoptionApp.getCurrentUser()!!.isEmailVerified) {
+                    QuickAdoptionApp.getCurrentUser()!!.sendEmailVerification()
+                    Toast.makeText(
+                        ctx,
+                        "We sent verification email on your E-mail",
+                        Toast.LENGTH_SHORT
+                    )
+                        .show()
+                }
+                Log.d("login", "logowanie")
+                startListeningToEmailVerification()
+                isFinished.value = false
             }
-            startListeningToEmailVerification()
-            isFinished.value = false
         }
     }
 
@@ -70,6 +77,7 @@ class LoginViewModel @Inject constructor(private val loginRepository: LoginRepos
             loginRepository.canLogin(
                 email.value
             ) {
+                Log.d("try login", "ok")
                 isFinished.value = true
                 if (it) login(email.value, password.value, QuickAdoptionApp.getAppContext())
                 else Toast.makeText(QuickAdoptionApp.getAppContext(), "Please create account to log in", Toast.LENGTH_SHORT).show()
@@ -78,6 +86,7 @@ class LoginViewModel @Inject constructor(private val loginRepository: LoginRepos
     }
 
     private fun startListeningToEmailVerification() {
+        Log.d("krok 1", "wlazl")
         QuickAdoptionApp.getAuth()?.currentUser?.reload()?.addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val user = QuickAdoptionApp.getAuth()?.currentUser
@@ -95,6 +104,9 @@ class LoginViewModel @Inject constructor(private val loginRepository: LoginRepos
                     QuickAdoptionApp.getAppContext()
                         .startActivity(mainActivityIntent)
                 }
+            }
+            else{
+                Log.d("blad", task.exception.toString())
             }
         }
     }
