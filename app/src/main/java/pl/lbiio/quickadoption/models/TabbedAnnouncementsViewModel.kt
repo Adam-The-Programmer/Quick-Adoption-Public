@@ -33,9 +33,11 @@ class TabbedAnnouncementsViewModel @Inject constructor(private val tabbedAnnounc
     val country: MutableState<String> = mutableStateOf("Poland")
     val city: MutableState<String> = mutableStateOf("Warsaw")
     val dateRange: MutableState<String> = mutableStateOf("04.10.2023-01.01.2026")
-    var ownAnnouncementsList: MutableState<List<OwnAnnouncementListItem>> = mutableStateOf(emptyList())
-    val publicAnnouncementsList: MutableState<List<PublicAnnouncementListItem>> = mutableStateOf(emptyList())
-
+    var ownAnnouncementsList: MutableState<List<OwnAnnouncementListItem>> =
+        mutableStateOf(emptyList())
+    val publicAnnouncementsList: MutableState<List<PublicAnnouncementListItem>> =
+        mutableStateOf(emptyList())
+    val isFinished: MutableState<Boolean> = mutableStateOf(true)
 
 
     fun initAppNavigator(appNavigator: AppNavigator) {
@@ -43,42 +45,59 @@ class TabbedAnnouncementsViewModel @Inject constructor(private val tabbedAnnounc
     }
 
     fun clearViewModel() {
-        country.value = ""
-        city.value = ""
-        dateRange.value = ""
+        viewModelScope.launch {
+            country.value = ""
+            city.value = ""
+            dateRange.value = ""
+            ownAnnouncementsList.value = emptyList()
+            publicAnnouncementsList.value = emptyList()
+            isFinished.value = true
+            disposables.clear()
+        }
     }
 
     fun navigateToInsertingForm() {
-        appNavigator?.tryNavigateTo(Destination.AnnouncementFormScreen())
+        viewModelScope.launch {
+            appNavigator?.tryNavigateTo(Destination.AnnouncementFormScreen())
+            clearViewModel()
+        }
     }
 
     fun navigateToChatsList(announcementId: Long, name: String) {
-        appNavigator?.tryNavigateTo(
-            Destination.ChatsScreen(
-                announcementId = announcementId,
-                animalName = name
+        viewModelScope.launch {
+            appNavigator?.tryNavigateTo(
+                Destination.ChatsScreen(
+                    announcementId = announcementId,
+                    animalName = name
+                )
             )
-        )
+        }
     }
 
     fun navigateToEditingForm(announcementId: Long) {
-        appNavigator?.tryNavigateTo(
-            Destination.AnnouncementEditScreen(
-                announcementId = announcementId
+        viewModelScope.launch {
+            appNavigator?.tryNavigateTo(
+                Destination.AnnouncementEditScreen(
+                    announcementId = announcementId
+                )
             )
-        )
+        }
     }
 
     fun navigateToPublicOffer(announcementId: Long) {
-        appNavigator?.tryNavigateTo(
-            Destination.PublicOfferDetailsScreen(
-                announcementId = announcementId,
+        viewModelScope.launch {
+            appNavigator?.tryNavigateTo(
+                Destination.PublicOfferDetailsScreen(
+                    announcementId = announcementId,
+                )
             )
-        )
+        }
     }
 
     fun navigateToPublicAnnouncementsChats() {
-        appNavigator?.tryNavigateTo(Destination.PublicAnnouncementsChatsScreen())
+        viewModelScope.launch {
+            appNavigator?.tryNavigateTo(Destination.PublicAnnouncementsChatsScreen())
+        }
     }
 
     private fun getOwnAnnouncements(
@@ -115,14 +134,56 @@ class TabbedAnnouncementsViewModel @Inject constructor(private val tabbedAnnounc
         disposables.add(disposable)
     }
 
+    private fun deleteAnnouncement(
+        announcementID: Long,
+        onComplete: () -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
+        val disposable = tabbedAnnouncementsRepository.deleteAnnouncement(announcementID)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { onComplete() },
+                { error -> onError(error) }
+            )
+        disposables.add(disposable)
+    }
+
+    fun deleteAnnouncementAndRefresh(announcementID: Long) {
+        viewModelScope.launch {
+            isFinished.value = false
+            deleteAnnouncement(
+                announcementID,
+                {
+                    getOwnAnnouncements(
+                        onSuccess = {
+                            ownAnnouncementsList.value = it.toMutableStateList()
+                            isFinished.value = true
+                        },
+                        onError = {
+                            Log.e("error with loading content", it.toString())
+                            isFinished.value = true
+                        }
+                    )
+                }, {
+                    isFinished.value = true
+                    Log.e("error deleting element", it.toString())
+                })
+        }
+
+    }
+
     fun populateOwnAnnouncementsList() {
         viewModelScope.launch {
+            isFinished.value = false
             getOwnAnnouncements(
                 onSuccess = {
                     ownAnnouncementsList.value = it.toMutableStateList()
+                    isFinished.value = true
                 },
                 onError = {
                     Log.e("error with loading content", it.toString())
+                    isFinished.value = true
                 }
             )
         }
@@ -130,16 +191,16 @@ class TabbedAnnouncementsViewModel @Inject constructor(private val tabbedAnnounc
 
     fun populatePublicAnnouncementsList() {
         viewModelScope.launch {
+            isFinished.value = false
             getPublicAnnouncements(
                 onSuccess = {
                     publicAnnouncementsList.value = it.toMutableList()
+                    isFinished.value = true
                 }, onError = {
                     Log.e("error with loading content", it.toString())
+                    isFinished.value = true
                 }
             )
         }
     }
-
-
-
 }

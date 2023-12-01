@@ -117,11 +117,10 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
             applyAnnouncementViewModel.getAnnouncementById()
         }
     }
-    //val x = remember{ mutableStateOf(applyAnnouncementViewModel.species.value) }
 
     BoxWithConstraints(contentAlignment = Alignment.Center) {
         this.constraints
-        Log.d("announcement.species Screen", applyAnnouncementViewModel.species.value)
+        Log.d("announcement.species Screen", applyAnnouncementViewModel.announcementId.value.toString())
         Column(
             modifier = Modifier
                 .fillMaxSize()

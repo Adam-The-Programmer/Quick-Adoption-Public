@@ -7,6 +7,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import pl.lbiio.quickadoption.data.ApplicationForAdoptionDTO
 import pl.lbiio.quickadoption.data.LastMessageDTO
+import pl.lbiio.quickadoption.data.Opinion
 import pl.lbiio.quickadoption.data.OpinionToInsertDTO
 import pl.lbiio.quickadoption.data.OwnAnnouncement
 import pl.lbiio.quickadoption.data.OwnAnnouncementChat
@@ -56,7 +57,7 @@ interface ApiService {
     @GET("particularOwnAnnouncement/{AnnouncementID}")
     fun getParticularOwnAnnouncement(@Path("AnnouncementID") AnnouncementID: Long): Observable<OwnAnnouncement>
 
-    @DELETE("deleteAnnouncement/{AnnouncementID}")
+    @DELETE("deleteAnnouncement/{AnnouncementID}") // tabbed
     fun deleteAnnouncement(@Path("AnnouncementID") AnnouncementID: Long): Completable
 
     @PUT("updateAnnouncement")
@@ -65,13 +66,13 @@ interface ApiService {
     @PUT("addAnnouncement/{UID}")
     fun addAnnouncement(@Path("UID") UID: String, @Body ownAnnouncement: OwnAnnouncement): Completable
 
-    @PUT("setAnnouncementHaveUnreadMessage/{AnnouncementID}")
+    @PUT("setAnnouncementHaveUnreadMessage/{AnnouncementID}") // details, chatConsloe
     fun setAnnouncementHaveUnreadMessage(@Path("AnnouncementID") AnnouncementID: Long): Completable
 
-    @PUT("setAnnouncementDontHaveUnreadMessage/{AnnouncementID}")
+    @PUT("setAnnouncementDontHaveUnreadMessage/{AnnouncementID}") //chats
     fun setAnnouncementDontHaveUnreadMessage(@Path("AnnouncementID") AnnouncementID: Long): Completable
 
-    @PUT("assignKeeperToAnnouncement/{UID}/{AnnouncementID}")
+    @PUT("assignKeeperToAnnouncement/{UID}/{AnnouncementID}") //chatConsole
     fun assignKeeperToAnnouncement(@Path("UID") UID: String, @Path("AnnouncementID") AnnouncementID: Long): Completable
 
     @GET("getAllPublicAnnouncementListItems/{Country}/{City}/{DateRange}/{UID}")
@@ -92,11 +93,11 @@ interface ApiService {
     @GET("publicChatsForUser/{UID}")
     fun getPublicChatsForUser(@Path("UID") UID: String): Observable<List<PublicAnnouncementChat>>
 
-    @PUT("lastMessageForChat/{ChatID}")
+    @PUT("lastMessageForChat/{ChatID}") // chat console
     fun setLastMessageForChat(@Path("ChatID") ChatID: String, @Body lastMessageDTO: LastMessageDTO): Completable
 
-    @PUT("makeChatAccepted/{AnnouncementID}/{ChatID}")
-    fun makeChatAccepted(@Path("AnnouncementID") AnnouncementID: Long, @Path("ChatID") ChatID: String): Completable
+    @PUT("makeChatAccepted/{AnnouncementID}/{ChatID}") //chatConsole
+    fun makeChatAccepted(@Path("AnnouncementID") AnnouncementID: Long, @Path("ChatID") ChatID: String): Completable //chatConsole
 
 
     //Opinion Methods
@@ -105,7 +106,7 @@ interface ApiService {
     fun insertOpinion(@Body opinionToInsertDTO: OpinionToInsertDTO): Completable
 
     @GET("opinions/{ReceiverID}")
-    fun getOpinions(@Path("ReceiverID") ReceiverID: String): Observable<List<PublicAnnouncementChat>>
+    fun getOpinions(@Path("ReceiverID") ReceiverID: String): Observable<List<Opinion>>
 
 
     //User Methods
@@ -117,7 +118,7 @@ interface ApiService {
     fun updateUser(@Path("UID") UID: String): Completable
 
     @GET("rateOfUser/{UID}")
-    fun getRateOfUser(@Path("UID") UID: String): Observable<String>
+    fun getRateOfUser(@Path("UID") UID: String): Observable<Float>
 
     @GET("getUser/{UID}")
     fun getUser(@Path("UID") UID: String): Observable<User>

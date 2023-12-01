@@ -12,4 +12,8 @@ class OwnChatsListRepository@Inject constructor(private val apiService: ApiServi
     fun getOwnChatsForAnnouncement(UID: String, announcementID: Long): Observable<List<OwnAnnouncementChat>> {
         return apiService.getOwnChatsForAnnouncement(UID, announcementID)
     }
+
+    fun setAnnouncementDontHaveUnreadMessage(announcementID: Long): Completable {
+        return apiService.setAnnouncementDontHaveUnreadMessage(announcementID)
+    }
 }

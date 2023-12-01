@@ -27,11 +27,11 @@ fun SigningFormNavigate() {
         startDestination = Destination.LoginScreen
     ) {
         composable(destination = Destination.LoginScreen) {
-            loginViewModel.clearViewModel()
+            //loginViewModel.clearViewModel()
             LoginScreen(loginViewModel)
         }
         composable(destination = Destination.RegistrationScreen) {
-            registrationViewModel.clearViewModel()
+            //registrationViewModel.clearViewModel()
             RegistrationFormForm(registrationViewModel)
         }
     }

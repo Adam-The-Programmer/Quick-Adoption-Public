@@ -274,12 +274,11 @@ private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel
                     }, { announcement ->
                         tabbedAnnouncementsViewModel.navigateToEditingForm(announcement)
                     },
-                    {
-
-                    })
+                    {announcementId ->
+                        tabbedAnnouncementsViewModel.deleteAnnouncementAndRefresh(announcementId)
+                    }
+                )
             }
-
-
         }
 
         FloatingActionButton(
@@ -312,20 +311,6 @@ private fun PublicScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewMo
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 64.dp)
         ) {
-
-//            val announcements = listOf(
-//                PublicAnnouncementListItem(
-//                    1L,
-//                    "Alex",
-//                    "Dog",
-//                    "Labrador",
-//                    "11.12.2023-19.12.2023",
-//                    "https://storage.googleapis.com/quick-adoption.appspot.com/images/FZUQgiYfWlY8gmZwlNIl3SPmRoK2",
-//                    "Poland",
-//                    "Warsaw"
-//                )
-//            )
-
 
             tabbedAnnouncementsViewModel.publicAnnouncementsList.value.forEach { announcement ->
                 PublicAnnouncement(announcement) { announcementId ->

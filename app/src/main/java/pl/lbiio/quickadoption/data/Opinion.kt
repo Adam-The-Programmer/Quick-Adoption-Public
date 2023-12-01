@@ -6,6 +6,6 @@ data class Opinion(
     val authorSurname: String,
     val authorImage: String,
     val content: String,
-    val timestamp: String,
+    val timestamp: Long,
     val rateStars: Int
 )

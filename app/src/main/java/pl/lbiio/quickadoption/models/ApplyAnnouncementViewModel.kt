@@ -38,13 +38,9 @@ class ApplyAnnouncementViewModel @Inject constructor(private val applyingAnnounc
         this.appNavigator = appNavigator
     }
 
-//    init{
-//        if(announcementId.value!=-1L)getAnnouncementById()
-//    }
-
     fun getAnnouncementById() {
-        isFinished.value = false
         viewModelScope.launch {
+            isFinished.value = false
             getParticularOwnAnnouncement(
                 announcementId.value,
                 onSuccess = { announcement ->
@@ -55,15 +51,6 @@ class ApplyAnnouncementViewModel @Inject constructor(private val applyingAnnounc
                     food.value = announcement.food
                     animalImage.value = announcement.animalImage
                     animalDescription.value = announcement.animalDescription
-
-                    Log.d("announcement.species model", species.value)
-//                Log.d("announcement.breed", breed.value)
-//                Log.d("announcement.animalName", animalName.value)
-//                Log.d("announcement.dateRange", dateRange.value)
-//                Log.d("announcement.food", food.value)
-//                Log.d("announcement.animalImage", animalImage.value)
-//                Log.d("announcement.animalDescription", animalDescription.value)
-
 
                     isFinished.value = true
                     Log.d("getting announcement", "Successful")
@@ -79,32 +66,62 @@ class ApplyAnnouncementViewModel @Inject constructor(private val applyingAnnounc
 
 
     fun navigateUp() {
-        appNavigator?.tryNavigateBack()
+        viewModelScope.launch {
+            clearViewModel()
+            appNavigator?.tryNavigateBack()
+        }
     }
 
     fun clearViewModel() {
-        isFinished.value = true
-        announcementId.value = -1L
-        species.value = ""
-        breed.value = ""
-        animalName.value = ""
-        dateRange.value = ""
-        food.value = ""
-        animalImage.value = ""
-        animalDescription.value = ""
+        viewModelScope.launch {
+            isFinished.value = true
+            announcementId.value = -1L
+            species.value = ""
+            breed.value = ""
+            animalName.value = ""
+            dateRange.value = ""
+            food.value = ""
+            animalImage.value = ""
+            animalDescription.value = ""
+            disposables.clear()
+        }
     }
 
     fun applyAnnouncement() {
-        isFinished.value = false
-        QuickAdoptionApp.getCurrentUserId()?.let { userID ->
-            applyingAnnouncementRepository.uploadAnimalImage(
-                "$userID-${System.currentTimeMillis()}",
-                animalImage.value
-            ) { url ->
-                if (announcementId.value == -1L) {
-                    addAnnouncement(QuickAdoptionApp.getCurrentUserId()!!,
-                        OwnAnnouncement(
-                            -1L,
+        viewModelScope.launch {
+            isFinished.value = false
+            QuickAdoptionApp.getCurrentUserId()?.let { userID ->
+                applyingAnnouncementRepository.uploadAnimalImage(
+                    "$userID-${System.currentTimeMillis()}",
+                    animalImage.value
+                ) { url ->
+                    if (announcementId.value == -1L) {
+                        addAnnouncement(QuickAdoptionApp.getCurrentUserId()!!,
+                            OwnAnnouncement(
+                                -1L,
+                                animalName.value,
+                                species.value,
+                                breed.value,
+                                dateRange.value,
+                                food.value,
+                                url,
+                                animalDescription.value
+                            ),
+                            onComplete = {
+                                Log.d("Inserting", "Successful")
+                                isFinished.value = true
+                                navigateUp()
+                            },
+                            onError = {
+                                isFinished.value = true
+                                Log.d("Inserting", "Error")
+                                it.printStackTrace()
+                            }
+                        )
+
+                    } else {
+                        updateAnnouncement(OwnAnnouncement(
+                            announcementId.value,
                             animalName.value,
                             species.value,
                             breed.value,
@@ -113,41 +130,20 @@ class ApplyAnnouncementViewModel @Inject constructor(private val applyingAnnounc
                             url,
                             animalDescription.value
                         ),
-                        onComplete = {
-                            Log.d("Inserting", "Successful")
-                            isFinished.value = true
-                        },
-                        onError = {
-                            isFinished.value = true
-                            Log.d("Inserting", "Error")
-                            it.printStackTrace()
-                        }
-                    )
-
-                } else {
-                    updateAnnouncement(OwnAnnouncement(
-                        announcementId.value,
-                        animalName.value,
-                        species.value,
-                        breed.value,
-                        dateRange.value,
-                        food.value,
-                        url,
-                        animalDescription.value
-                    ),
-                        onComplete = {
-                            isFinished.value = true
-                            Log.d("updating", "Successful")
-                        },
-                        onError = {
-                            isFinished.value = true
-                            Log.d("Inserting", "Error")
-                            it.printStackTrace()
-                        })
+                            onComplete = {
+                                isFinished.value = true
+                                Log.d("updating", "Successful")
+                                navigateUp()
+                            },
+                            onError = {
+                                isFinished.value = true
+                                Log.d("Inserting", "Error")
+                                it.printStackTrace()
+                            })
+                    }
                 }
             }
         }
-
     }
 
     private fun addAnnouncement(
@@ -191,5 +187,4 @@ class ApplyAnnouncementViewModel @Inject constructor(private val applyingAnnounc
             )
         disposables.add(disposable)
     }
-
 }

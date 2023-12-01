@@ -93,52 +93,9 @@ private fun PublicAnnouncementsChatsContent(publicChatsListViewModel: PublicChat
         modifier = Modifier
             .fillMaxSize(),
     ) {
-
-//        val publicAnnouncementChats = listOf<PublicAnnouncementChat>(
-//            PublicAnnouncementChat(
-//                "1",
-//                12L,
-//                "20",
-//                "Christiano",
-//                "Ronaldo",
-//                "https://bi.im-g.pl/im/52/f5/1b/z29318482Q,WCup-World-Cup-Photo-Gallery.jpg",
-//                "I can adopt your dog jhosowgwegu ugtpwrgwutg",
-//                "text",
-//                1696161432450L,
-//                "10",
-//                1
-//            ),
-//            PublicAnnouncementChat(
-//                "2",
-//                12L,
-//                "23",
-//                "Adele",
-//                "Adkins",
-//                "https://bi.im-g.pl/im/d5/60/14/z21366229AMP,Adele.jpg",
-//                "I will call you back!",
-//                "text",
-//                1696161434450L,
-//                "16",
-//                1
-//            ),
-//            PublicAnnouncementChat(
-//                "3",
-//                12L,
-//                "24",
-//                "Alvaro",
-//                "Soler",
-//                "https://bi.im-g.pl/im/11/06/1a/z27288081IER,Alvaro-Soler---2.jpg",
-//                "See you!",
-//                "text",
-//                1696161432450L,
-//                "10",
-//                1
-//            )
-//        )
         LaunchedEffect(Unit){
             publicChatsListViewModel.fillListOfChats()
         }
-
 
         Column(
             Modifier
@@ -156,7 +113,7 @@ private fun PublicAnnouncementsChatsContent(publicChatsListViewModel: PublicChat
                     style = MaterialTheme.typography.subtitle1
                 )
                 Spacer(Modifier.width(12.dp))
-                androidx.compose.material.Text("3 items".uppercase())
+                Text("${publicChatsListViewModel.publicChats.value.size} items".uppercase())
             }
             publicChatsListViewModel.publicChats.value.forEach {
                 ChatsListItem(publicAnnouncementChat = it, onItemClick = { chatId ->

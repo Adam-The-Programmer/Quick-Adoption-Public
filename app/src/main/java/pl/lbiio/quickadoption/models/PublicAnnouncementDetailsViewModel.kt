@@ -4,11 +4,13 @@ import android.util.Log
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.launch
 import pl.lbiio.quickadoption.QuickAdoptionApp
 import pl.lbiio.quickadoption.data.ApplicationForAdoptionDTO
 import pl.lbiio.quickadoption.data.OwnAnnouncementListItem
@@ -24,12 +26,9 @@ class PublicAnnouncementDetailsViewModel @Inject constructor(private val publicA
     private val disposables = CompositeDisposable()
 
     val announcementID: MutableState<Long> = mutableStateOf(-1L)
-    val isFinished: MutableState<Boolean> = mutableStateOf(true)
-
-
-    val announcementDetails: MutableState<PublicAnnouncementDetails> =
-        mutableStateOf(PublicAnnouncementDetails())
+    val announcementDetails: MutableState<PublicAnnouncementDetails> = mutableStateOf(PublicAnnouncementDetails())
     val message: MutableState<String> = mutableStateOf("I want to adopt your pet")
+    val isFinished: MutableState<Boolean> = mutableStateOf(true)
 
     fun initAppNavigator(appNavigator: AppNavigator) {
         this.appNavigator = appNavigator
@@ -37,12 +36,20 @@ class PublicAnnouncementDetailsViewModel @Inject constructor(private val publicA
 
 
     fun navigateUp() {
-        appNavigator?.tryNavigateBack()
+        viewModelScope.launch {
+            appNavigator?.tryNavigateBack()
+            clearViewModel()
+        }
     }
 
-    fun clearViewModel() {
-        message.value = "I want to adopt your pet"
-        announcementDetails.value.clearObject()
+    private fun clearViewModel() {
+        viewModelScope.launch {
+            message.value = "I want to adopt your pet"
+            announcementDetails.value.clearObject()
+            announcementID.value = -1L
+            isFinished.value = true
+            disposables.clear()
+        }
     }
 
     private fun getDetailsOfOffer(
@@ -60,7 +67,22 @@ class PublicAnnouncementDetailsViewModel @Inject constructor(private val publicA
         disposables.add(disposable)
     }
 
-    fun applyForAdoption(
+    private fun setAnnouncementHaveUnreadMessage(
+        onComplete: () -> Unit,
+        onError: (error: Throwable) -> Unit
+    ) {
+        val disposable =
+            publicAnnouncementDetailsRepository.setAnnouncementHaveUnreadMessage(announcementID.value)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    { onComplete() },
+                    { error -> onError(error) }
+                )
+        disposables.add(disposable)
+    }
+
+    private fun applyForAdoption(
         lastMessageContent: String,
         chatID: String,
         ownerID: String,
@@ -89,38 +111,52 @@ class PublicAnnouncementDetailsViewModel @Inject constructor(private val publicA
     }
 
     fun fillDetailsObject() {
-        isFinished.value = false
-        getDetailsOfOffer(
-            onSuccess = {
-                isFinished.value = true
-                announcementDetails.value = it
-                Log.d("dane", announcementDetails.value.dateRange.toString())
-            },
-            onError = {
-
-            }
-        )
+        viewModelScope.launch {
+            isFinished.value = false
+            getDetailsOfOffer(
+                onSuccess = {
+                    isFinished.value = true
+                    announcementDetails.value = it
+                    Log.d("dane", announcementDetails.value.dateRange)
+                },
+                onError = {
+                    isFinished.value = true
+                    Log.d("getDetailsOfOffer error", it.toString())
+                }
+            )
+        }
     }
 
     fun initConversation() {
-        isFinished.value = false
-        publicAnnouncementDetailsRepository.createDocumentAndGetID(message.value,
-            {chatID->
-                applyForAdoption(
-                    message.value,
-                    chatID,
-                    announcementDetails.value.ownerID,
-                    {
-                        isFinished.value = true
-                    },
-                    {
+        viewModelScope.launch {
+            isFinished.value = false
+            publicAnnouncementDetailsRepository.createDocumentAndGetID(message.value,
+                { chatID ->
+                    applyForAdoption(
+                        message.value,
+                        chatID,
+                        announcementDetails.value.ownerID,
+                        {
+                            setAnnouncementHaveUnreadMessage(
+                                {
+                                    isFinished.value = true
+                                }, {
+                                    isFinished.value = true
+                                    Log.d("setAnnouncementHaveUnreadMessage error", it.toString())
+                                })
 
-                    }
-                )
-            }, {
 
-            })
+                        },
+                        {
+                            isFinished.value = true
+                            Log.d("applyForAdoption error", it.toString())
+                        }
+                    )
+                }, {
+                    isFinished.value = true
+                    Log.d("createDocumentAndGetID error", it.toString())
+                })
+        }
     }
-
 
 }

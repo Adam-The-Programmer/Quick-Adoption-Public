@@ -163,7 +163,7 @@ private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
                             .padding(4.dp, 0.dp, 8.dp, 0.dp),
                         onClick = {
                             isAssigningDialogOpened.value = false
-                            // DB operation
+                            chatConsoleViewModel.acceptChatAndAssignUser()
                         }
                     ) {
                         Text("YES")

@@ -25,6 +25,10 @@ class PublicAnnouncementDetailsRepository @Inject constructor(private val apiSer
         return apiService.applyForAdoption(applicationForAdoptionDTO)
     }
 
+    fun setAnnouncementHaveUnreadMessage(announcementId: Long): Completable{
+        return apiService.setAnnouncementHaveUnreadMessage(announcementId)
+    }
+
     fun createDocumentAndGetID(Content: String, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
 
         val gson = GsonBuilder().create()

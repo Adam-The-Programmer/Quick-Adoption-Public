@@ -25,30 +25,23 @@ class LoginViewModel @Inject constructor(private val loginRepository: LoginRepos
     val password: MutableState<String> = mutableStateOf("Adam1234@pi")
     var isFinished: MutableState<Boolean> = mutableStateOf(true)
 
-//    init{
-//        if(QuickAdoptionApp.getCurrentUserId()!=null){
-//            val mainActivityIntent = Intent(
-//                QuickAdoptionApp.getAppContext(),
-//                MainActivity::class.java
-//            )
-//            mainActivityIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-//            QuickAdoptionApp.getAppContext()
-//                .startActivity(mainActivityIntent)
-//        }
-//    }
-
     fun initAppNavigator(appNavigator: AppNavigator) {
         this.appNavigator = appNavigator
     }
 
     fun navigateToRegistrationForm() {
-        appNavigator?.tryNavigateTo(Destination.RegistrationScreen())
+        viewModelScope.launch {
+            appNavigator?.tryNavigateTo(Destination.RegistrationScreen())
+            clearViewModel()
+        }
     }
 
-    fun clearViewModel(){
-        email.value = ""
-        password.value = ""
-        isFinished.value = true
+    private fun clearViewModel(){
+        viewModelScope.launch {
+            email.value = ""
+            password.value = ""
+            isFinished.value = true
+        }
     }
 
     private fun login(email: String, password: String, ctx: Context) {

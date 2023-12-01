@@ -16,14 +16,12 @@ class TabbedAnnouncementsRepository @Inject constructor(private val apiService: 
         return apiService.getAllOwnAnnouncementList(UID)
     }
 
-
-
-
-
-
-
     fun getAllPublicAnnouncementListItems(country: String, city: String, dateRange: String, UID: String): Observable<List<PublicAnnouncementListItem>> {
         return apiService.getAllPublicAnnouncementListItems(country, city, dateRange, UID)
+    }
+
+    fun deleteAnnouncement(AnnouncementID: Long): Completable {
+        return apiService.deleteAnnouncement(AnnouncementID)
     }
 
 

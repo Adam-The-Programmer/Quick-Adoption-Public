@@ -49,104 +49,114 @@ class RegistrationViewModel @Inject constructor(private val registrationReposito
     }
 
     fun navigateUp(){
-        appNavigator?.tryNavigateBack()
+        viewModelScope.launch{
+            appNavigator?.tryNavigateBack()
+            clearViewModel()
+        }
     }
 
-    fun clearViewModel(){
-        registrationStep.value = 1
-        name.value = ""
-        surname.value = ""
-        phone.value = ""
-        country.value = ""
-        city.value = ""
-        address.value = ""
-        postal.value = ""
-        email.value = ""
-        password.value = ""
-        retypedPassword.value = ""
-        description.value = ""
-        path.value = ""
-        isFinished.value = true
+   private fun clearViewModel(){
+        viewModelScope.launch{
+            registrationStep.value = 1
+            name.value = ""
+            surname.value = ""
+            phone.value = ""
+            country.value = ""
+            city.value = ""
+            address.value = ""
+            postal.value = ""
+            email.value = ""
+            password.value = ""
+            retypedPassword.value = ""
+            description.value = ""
+            path.value = ""
+            isFinished.value = true
+            disposables.clear()
+        }
     }
 
     fun moveToNextStep() {
-        when (registrationStep.value) {
-            1 -> {
-                if (email.value.isNotEmpty() &&
-                    password.value.isNotEmpty() &&
-                    retypedPassword.value.isNotEmpty()
-                ) {
-                    if (password.value == retypedPassword.value) {
-                        if (password.value.length >= 6) {
-                            tryRegister()
+        viewModelScope.launch{
+            when (registrationStep.value) {
+                1 -> {
+                    if (email.value.isNotEmpty() &&
+                        password.value.isNotEmpty() &&
+                        retypedPassword.value.isNotEmpty()
+                    ) {
+                        if (password.value == retypedPassword.value) {
+                            if (password.value.length >= 6) {
+                                tryRegister()
+                            } else {
+                                Toast.makeText(
+                                    QuickAdoptionApp.getAppContext(),
+                                    "password mus be minimum 6 characters",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         } else {
                             Toast.makeText(
                                 QuickAdoptionApp.getAppContext(),
-                                "password mus be minimum 6 characters",
+                                "passwords not matching",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
                     } else {
                         Toast.makeText(
                             QuickAdoptionApp.getAppContext(),
-                            "passwords not matching",
+                            "Fill all inputs",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
-                } else {
-                    Toast.makeText(
-                        QuickAdoptionApp.getAppContext(),
-                        "Fill all inputs",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
-            }
-            2 -> {
-                registrationStep.value = 3
-                if (name.value.isNotEmpty() &&
-                    surname.value.isNotEmpty() &&
-                    phone.value.isNotEmpty() &&
-                    country.value.isNotEmpty() &&
-                    city.value.isNotEmpty() &&
-                    address.value.isNotEmpty() &&
-                    postal.value.isNotEmpty()
-                ) {
-                    if (isPhoneValid(phone.value)) {
-                        if (isPostalCodeValid(postal.value)) {
-                            registrationStep.value = 3
+                2 -> {
+                    registrationStep.value = 3
+                    if (name.value.isNotEmpty() &&
+                        surname.value.isNotEmpty() &&
+                        phone.value.isNotEmpty() &&
+                        country.value.isNotEmpty() &&
+                        city.value.isNotEmpty() &&
+                        address.value.isNotEmpty() &&
+                        postal.value.isNotEmpty()
+                    ) {
+                        if (isPhoneValid(phone.value)) {
+                            if (isPostalCodeValid(postal.value)) {
+                                registrationStep.value = 3
+                            } else {
+                                Toast.makeText(
+                                    QuickAdoptionApp.getAppContext(),
+                                    "postal code should look like xx-xxx",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         } else {
                             Toast.makeText(
                                 QuickAdoptionApp.getAppContext(),
-                                "postal code should look like xx-xxx",
+                                "phone number must contain country code",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
                     } else {
                         Toast.makeText(
                             QuickAdoptionApp.getAppContext(),
-                            "phone number must contain country code",
+                            "Fill all inputs",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
-                } else {
-                    Toast.makeText(
-                        QuickAdoptionApp.getAppContext(),
-                        "Fill all inputs",
-                        Toast.LENGTH_SHORT
-                    ).show()
                 }
             }
         }
     }
 
     fun moveToPreviousStep() {
-        when (registrationStep.value) {
-            2 -> {
-                registrationStep.value = 1
-            }
+        viewModelScope.launch{
+            when (registrationStep.value) {
+                2 -> {
+                    registrationStep.value = 1
+                }
 
-            3 -> {
-                registrationStep.value = 2
+                3 -> {
+                    registrationStep.value = 2
+                }
             }
         }
     }
@@ -237,11 +247,13 @@ class RegistrationViewModel @Inject constructor(private val registrationReposito
     }
 
     fun finishRegistration() {
-        registrationRepository.register(email.value, password.value).addOnSuccessListener {
-            QuickAdoptionApp.getCurrentUser()!!.sendEmailVerification()
-            Toast.makeText(QuickAdoptionApp.getAppContext(), "We sent verification email on your E-mail", Toast.LENGTH_SHORT).show()
-            isFinished.value = false
-            startListeningToEmailVerification()
+        viewModelScope.launch{
+            registrationRepository.register(email.value, password.value).addOnSuccessListener {
+                QuickAdoptionApp.getCurrentUser()!!.sendEmailVerification()
+                Toast.makeText(QuickAdoptionApp.getAppContext(), "We sent verification email on your E-mail", Toast.LENGTH_SHORT).show()
+                isFinished.value = false
+                startListeningToEmailVerification()
+            }
         }
     }
 
@@ -255,8 +267,4 @@ class RegistrationViewModel @Inject constructor(private val registrationReposito
             )
         disposables.add(disposable)
     }
-
-
-
-
 }

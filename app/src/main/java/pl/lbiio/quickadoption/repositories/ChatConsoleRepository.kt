@@ -11,10 +11,14 @@ import com.google.firebase.storage.StorageReference
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import io.reactivex.Completable
 import kotlinx.coroutines.tasks.await
 import pl.lbiio.quickadoption.QuickAdoptionApp
 import pl.lbiio.quickadoption.data.ChatMessage
+import pl.lbiio.quickadoption.data.LastMessageDTO
 import pl.lbiio.quickadoption.services.ApiService
+import retrofit2.http.Body
+import retrofit2.http.Path
 import java.io.File
 import javax.inject.Inject
 
@@ -93,6 +97,22 @@ class ChatConsoleRepository @Inject constructor(private val apiService: ApiServi
                 onMessagesChanged(messages)
             }
         }
+    }
+
+    fun setAnnouncementHaveUnreadMessage(announcementId: Long): Completable {
+        return apiService.setAnnouncementHaveUnreadMessage(announcementId)
+    }
+
+    fun assignKeeperToAnnouncement(UID: String, announcementId: Long): Completable {
+        return apiService.assignKeeperToAnnouncement(UID, announcementId)
+    }
+
+    fun makeChatAccepted(AnnouncementID: Long, ChatID: String): Completable{
+        return apiService.makeChatAccepted(AnnouncementID, ChatID)
+    }
+
+    fun setLastMessageForChat(ChatID: String, lastMessageDTO: LastMessageDTO): Completable{
+        return apiService.setLastMessageForChat(ChatID, lastMessageDTO)
     }
 
 }

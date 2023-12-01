@@ -44,13 +44,22 @@ sealed class Destination(protected val route: String, vararg params: String) {
     object PublicAnnouncementsChatsScreen : NoArgumentsDestination("public_announcements_chats")
 
 
-    object ChatConsoleScreen : Destination("chat", "chat_id", "is_chat_own") {
+    object ChatConsoleScreen : Destination("chat", "chat_id", "announcement_id", "is_chat_own", "partner_name", "partner_image", "partner_uid") {
         const val CHAT_ID_KEY = "chat_id"
+        const val ANNOUNCEMENT_ID_KEY = "announcement_id"
         const val IS_CHAT_OWN_KEY = "is_chat_own"
+        const val PARTNER_NAME_KEY = "partner_name"
+        const val PARTNER_IMAGE_KEY = "partner_image"
+        const val PARTNER_UID_KEY = "partner_uid"
 
-        operator fun invoke(chatId: String, isChatOwn: Boolean): String = route.appendParams(
+
+        operator fun invoke(chatId: String, announcementId: Long, isChatOwn: Boolean, partnerName: String, partnerImage: String, partnerUID: String): String = route.appendParams(
             CHAT_ID_KEY to chatId,
-            IS_CHAT_OWN_KEY to isChatOwn
+            ANNOUNCEMENT_ID_KEY to announcementId,
+            IS_CHAT_OWN_KEY to isChatOwn,
+            PARTNER_NAME_KEY to partnerName,
+            PARTNER_IMAGE_KEY to partnerImage,
+            PARTNER_UID_KEY to partnerUID
         )
     }
 
@@ -59,6 +68,14 @@ sealed class Destination(protected val route: String, vararg params: String) {
 
         operator fun invoke(announcementId: Long): String = route.appendParams(
             ANNOUNCEMENT_ID_KEY to announcementId
+        )
+    }
+
+    object OpinionsScreen : Destination("opinions_screen", "uid") {
+        const val UID_KEY = "uid"
+
+        operator fun invoke(uid: String): String = route.appendParams(
+            UID_KEY to uid
         )
     }
 }
