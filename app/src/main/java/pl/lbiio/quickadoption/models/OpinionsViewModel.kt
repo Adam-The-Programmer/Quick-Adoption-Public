@@ -27,6 +27,7 @@ class OpinionsViewModel @Inject constructor(private val opinionsRepository: Opin
     val receiverID: MutableState<String> = mutableStateOf("")
     val opinions: MutableState<List<Opinion>> = mutableStateOf(emptyList())
     val rate: MutableState<Float> = mutableStateOf(0.0f)
+    val isFinished: MutableState<Boolean> = mutableStateOf(true)
 
     fun initAppNavigator(appNavigator: AppNavigator) {
         this.appNavigator = appNavigator
@@ -35,24 +36,39 @@ class OpinionsViewModel @Inject constructor(private val opinionsRepository: Opin
     fun navigateUp() {
         viewModelScope.launch {
             appNavigator?.tryNavigateBack()
+            clearViewModel()
         }
     }
 
+    private fun clearViewModel(){
+        receiverID.value = ""
+        opinions.value = emptyList()
+        rate.value = 0.0f
+        isFinished.value = true
+        disposables.clear()
+    }
+
     fun getKeeperRate(UID: String) {
+        isFinished.value = false
         viewModelScope.launch {
             getRateOfUser(UID, {
+                isFinished.value = true
                 rate.value = it
             }, {
+                isFinished.value = true
                 Log.d("getKeeperRate error", it.toString())
             })
         }
     }
 
     fun fillListOfOpinions(receiverID :String) {
+        isFinished.value = false
         viewModelScope.launch {
             getOpinions(receiverID, {
+                isFinished.value = true
                 opinions.value = it.toMutableList()
             }, {
+                isFinished.value = true
                 Log.d("fillListOfOpinions error", it.toString())
             })
         }

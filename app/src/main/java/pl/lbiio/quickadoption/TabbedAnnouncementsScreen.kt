@@ -1,12 +1,11 @@
 package pl.lbiio.quickadoption
 
-import android.util.Log
+
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.Interaction
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +22,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.BackdropScaffold
 import androidx.compose.material.BackdropValue
+import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Divider
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
@@ -31,28 +33,22 @@ import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Tab
 import androidx.compose.material.TabRow
-import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LocationCity
+import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.rememberBackdropScaffoldState
-import androidx.compose.material.Button
-import androidx.compose.material.icons.filled.Message
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -61,33 +57,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import pl.lbiio.quickadoption.models.TabbedAnnouncementsViewModel
-import pl.lbiio.quickadoption.support.RangeDateFormatter
-import java.text.SimpleDateFormat
-import java.util.Locale
-
-
-import androidx.compose.material3.DatePickerColors
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DateRangePicker
-import androidx.compose.material3.rememberDateRangePickerState
-import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.launch
 import pl.lbiio.quickadoption.data.OwnAnnouncementListItem
-import pl.lbiio.quickadoption.data.PublicAnnouncementDetails
 import pl.lbiio.quickadoption.data.PublicAnnouncementListItem
-import java.time.LocalDate
+import pl.lbiio.quickadoption.models.TabbedAnnouncementsViewModel
+import pl.lbiio.quickadoption.support.*
 
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun TabbedAnnouncementsScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
 
@@ -100,19 +82,6 @@ fun TabbedAnnouncementsScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsV
             it.calculateBottomPadding()
             TabbedAnnouncementsContent(tabbedAnnouncementsViewModel)
         },
-    )
-}
-
-@Composable
-private fun TopAppBarText(
-    modifier: Modifier = Modifier,
-    text: String
-) {
-    androidx.compose.material.Text(
-        modifier = modifier,
-        text = text,
-        style = MaterialTheme.typography.subtitle1,
-        fontSize = 17.sp
     )
 }
 
@@ -134,8 +103,6 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
        tabbedAnnouncementsViewModel.populateOwnAnnouncementsList()
    }
 
-    var tabIndex by remember { mutableIntStateOf(0) }
-
     val tabs = listOf("Own", "Public")
 
     val scaffoldState = rememberBackdropScaffoldState(initialValue = BackdropValue.Concealed)
@@ -144,7 +111,7 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Surface(shadowElevation = 4.dp) {
-            TabRow(selectedTabIndex = tabIndex) {
+            TabRow(selectedTabIndex = tabbedAnnouncementsViewModel.tabIndex.value) {
                 tabs.forEachIndexed { index, title ->
                     Tab(text = {
                         Text(
@@ -153,9 +120,9 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
                             )
                         )
                     },
-                        selected = tabIndex == index,
+                        selected = tabbedAnnouncementsViewModel.tabIndex.value == index,
                         onClick = {
-                            tabIndex = index
+                            tabbedAnnouncementsViewModel.tabIndex.value = index
                         }
                     )
                 }
@@ -165,7 +132,7 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
         BackdropScaffold(
             scaffoldState = scaffoldState,
             frontLayerShape = RoundedCornerShape(0.dp),
-            gesturesEnabled = tabIndex == 1,
+            gesturesEnabled = tabbedAnnouncementsViewModel.tabIndex.value == 1,
             appBar = {
 
             },
@@ -210,7 +177,7 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
                 }
             },
             frontLayerContent = {
-                when (tabIndex) {
+                when (tabbedAnnouncementsViewModel.tabIndex.value) {
 
                     0 -> {
                         OwnScreen(tabbedAnnouncementsViewModel)
@@ -230,22 +197,15 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
 
             },
             peekHeight = 0.dp,
-
-
             ) {
 
         }
-
-
     }
-
-
 }
-
 @Composable
 private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
     BoxWithConstraints(
-        Modifier.fillMaxSize()
+        Modifier.fillMaxSize(),
     ) {
         Column(
             Modifier
@@ -300,12 +260,30 @@ private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel
         ) {
             Icon(Icons.Filled.Add, "")
         }
+
+        if (!tabbedAnnouncementsViewModel.isFinished.value) {
+            Dialog(
+                onDismissRequest = { tabbedAnnouncementsViewModel.isFinished.value = true },
+                DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+            ) {
+                Box(
+                    contentAlignment= Alignment.Center,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .background(Color.White, shape = RoundedCornerShape(8.dp))
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun PublicScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
+
+    BoxWithConstraints(contentAlignment = Alignment.Center) {
+        this.constraints
         Column(
             Modifier
                 .verticalScroll(rememberScrollState())
@@ -319,6 +297,24 @@ private fun PublicScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewMo
             }
 
         }
+
+        if (!tabbedAnnouncementsViewModel.isFinished.value) {
+            Dialog(
+                onDismissRequest = { tabbedAnnouncementsViewModel.isFinished.value = true },
+                DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+            ) {
+                Box(
+                    contentAlignment= Alignment.Center,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .background(Color.White, shape = RoundedCornerShape(8.dp))
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
+    }
+
 }
 
 
@@ -462,7 +458,7 @@ private fun OwnAnnouncementListItem(
             ) {
                 Spacer(Modifier.width(8.dp))
                 AsyncImage(
-                    model = decodePathFile(ownAnnouncementListItem.animalImage),
+                    model = QuickAdoptionApp.decodePathFile(ownAnnouncementListItem.animalImage),
                     contentDescription = "",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -541,226 +537,3 @@ private fun OwnAnnouncementListItem(
     }
 }
 
-@Composable
-private fun SearchField(
-    placeholder: String,
-    icon: ImageVector,
-    currentValue: String,
-    onTextChange: (text: String) -> Unit
-) {
-    var value by remember { mutableStateOf(currentValue) }
-
-    OutlinedTextField(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(0.dp, 0.dp, 0.dp, 8.dp),
-        value = value,
-        placeholder = {
-            Text(
-                placeholder,
-                style = MaterialTheme.typography.subtitle1.copy(pl.lbiio.quickadoption.ui.theme.SalmonWhite)
-            )
-        },
-        leadingIcon = { Icon(icon, null) },
-
-        colors = TextFieldDefaults.outlinedTextFieldColors(
-            textColor = pl.lbiio.quickadoption.ui.theme.SimpleWhite,
-            backgroundColor = pl.lbiio.quickadoption.ui.theme.PurpleBrownLight,
-            cursorColor = pl.lbiio.quickadoption.ui.theme.SimpleWhite,
-            focusedBorderColor = pl.lbiio.quickadoption.ui.theme.PurpleBrownLight,
-            unfocusedBorderColor = pl.lbiio.quickadoption.ui.theme.PurpleBrownLight,
-            leadingIconColor = Color.White,
-            trailingIconColor = Color.White,
-            focusedLabelColor = Color.Transparent,
-            placeholderColor = pl.lbiio.quickadoption.ui.theme.SimpleWhite,
-            unfocusedLabelColor = pl.lbiio.quickadoption.ui.theme.SimpleWhite
-        ),
-        onValueChange = {
-            value = it
-            onTextChange(it)
-        },
-    )
-}
-
-@Composable
-private fun DateInput(
-    currentValue: String,
-    onClick: () -> Unit
-) {
-
-    val interactionSource = remember {
-        object : MutableInteractionSource {
-            override val interactions = MutableSharedFlow<Interaction>(
-                extraBufferCapacity = 16,
-                onBufferOverflow = BufferOverflow.DROP_OLDEST,
-            )
-
-            override suspend fun emit(interaction: Interaction) {
-                if (interaction is PressInteraction.Release) {
-                    onClick()
-                }
-
-                interactions.emit(interaction)
-            }
-
-            override fun tryEmit(interaction: Interaction): Boolean {
-                return interactions.tryEmit(interaction)
-            }
-        }
-    }
-
-    val text by remember(currentValue) { mutableStateOf(currentValue) }
-
-    OutlinedTextField(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(0.dp, 0.dp, 0.dp, 8.dp),
-        value = text,
-        placeholder = {
-            Text(
-                "Date Range",
-                style = MaterialTheme.typography.subtitle1.copy(pl.lbiio.quickadoption.ui.theme.SalmonWhite)
-            )
-        },
-        leadingIcon = { Icon(Icons.Default.DateRange, null) },
-
-        colors = TextFieldDefaults.outlinedTextFieldColors(
-            textColor = pl.lbiio.quickadoption.ui.theme.SimpleWhite,
-            backgroundColor = pl.lbiio.quickadoption.ui.theme.PurpleBrownLight,
-            cursorColor = pl.lbiio.quickadoption.ui.theme.SimpleWhite,
-            focusedBorderColor = pl.lbiio.quickadoption.ui.theme.PurpleBrownLight,
-            unfocusedBorderColor = pl.lbiio.quickadoption.ui.theme.PurpleBrownLight,
-            leadingIconColor = Color.White,
-            trailingIconColor = Color.White,
-            focusedLabelColor = Color.Transparent,
-            placeholderColor = pl.lbiio.quickadoption.ui.theme.SimpleWhite,
-            unfocusedLabelColor = pl.lbiio.quickadoption.ui.theme.SimpleWhite
-        ),
-        onValueChange = {
-
-        },
-        readOnly = true,
-        interactionSource = interactionSource
-    )
-}
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DateRangePickerSample(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
-    val formatter = SimpleDateFormat("dd MMMM yyyy", Locale.ROOT)
-
-    //val calendar = Calendar.getInstance()
-    //calendar.set(2023, 9, 25) // year, month, date
-
-    var startDate by remember {
-        mutableLongStateOf(System.currentTimeMillis() + 604800000) // or use mutableStateOf(calendar.timeInMillis)
-    }
-
-    //calendar.set(2024, 12, 31) // year, month, date
-
-    var endDate by remember {
-        mutableLongStateOf(System.currentTimeMillis() + 604800000 * 2) // or use mutableStateOf(calendar.timeInMillis)
-    }
-
-    // set the initial dates
-    val dateRangePickerState = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = startDate,
-        initialSelectedEndDateMillis = endDate
-    )
-
-    var showDateRangePicker by remember {
-        mutableStateOf(false)
-    }
-
-    if (showDateRangePicker) {
-        DatePickerDialog(
-            onDismissRequest = {
-                showDateRangePicker = false
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDateRangePicker = false
-                        startDate = dateRangePickerState.selectedStartDateMillis!!
-                        endDate = dateRangePickerState.selectedEndDateMillis!!
-                        tabbedAnnouncementsViewModel.dateRange.value =
-                            "${formatInputDateValue(startDate)}-${formatInputDateValue(endDate)}"
-                        //range = applyAnnouncementViewModel.date.value
-                        Log.d("zakres", tabbedAnnouncementsViewModel.dateRange.value)
-                    },
-                ) {
-                    androidx.compose.material.Text(text = "Confirm")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showDateRangePicker = false
-                }) {
-                    androidx.compose.material.Text(text = "Cancel")
-                }
-            }
-        ) {
-            DateRangePicker(
-                state = dateRangePickerState,
-                modifier = Modifier.height(height = 500.dp),
-                dateFormatter = RangeDateFormatter(),
-                title = { androidx.compose.material.Text(text = "") },
-                showModeToggle = false,
-                colors =
-                DatePickerColors(
-                    containerColor = pl.lbiio.quickadoption.ui.theme.Salmon,
-                    titleContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    headlineContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    weekdayContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    subheadContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    navigationContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    yearContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    disabledYearContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    currentYearContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    selectedYearContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    disabledSelectedYearContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    selectedYearContainerColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    disabledSelectedYearContainerColor = pl.lbiio.quickadoption.ui.theme.SalmonWhite,
-                    dayContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    disabledDayContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    selectedDayContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    disabledSelectedDayContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    selectedDayContainerColor = pl.lbiio.quickadoption.ui.theme.Salmon,
-                    disabledSelectedDayContainerColor = pl.lbiio.quickadoption.ui.theme.SalmonWhite,
-                    todayContentColor = pl.lbiio.quickadoption.ui.theme.Salmon,
-                    todayDateBorderColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    dayInSelectionRangeContainerColor = pl.lbiio.quickadoption.ui.theme.Salmon,
-                    dayInSelectionRangeContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    dividerColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    dateTextFieldColors = androidx.compose.material3.TextFieldDefaults.textFieldColors() // You can customize TextFieldColors if needed
-                )
-
-            )
-        }
-    }
-    DateInput(tabbedAnnouncementsViewModel.dateRange.value) {
-        showDateRangePicker = true
-
-    }
-}
-
-private fun formatInputDateValue(dateMillis: Long): String {
-    val date = LocalDate.ofEpochDay(dateMillis / 86400000) // Convert millis to LocalDate
-
-    // Format the date as "yy MM dd"
-    return String.format(
-        "%02d.%02d.%02d",
-        date.dayOfMonth,
-        date.monthValue,
-        date.year
-    )
-}
-
-private fun codePathFile(path: String): String {
-    return path.replace("/", "*")
-}
-
-private fun decodePathFile(codedPath: String): String {
-    return codedPath.replace("*", "/")
-}

@@ -2,6 +2,7 @@ package pl.lbiio.quickadoption.models
 
 import android.util.Log
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.toMutableStateList
@@ -33,12 +34,12 @@ class TabbedAnnouncementsViewModel @Inject constructor(private val tabbedAnnounc
     val country: MutableState<String> = mutableStateOf("Poland")
     val city: MutableState<String> = mutableStateOf("Warsaw")
     val dateRange: MutableState<String> = mutableStateOf("04.10.2023-01.01.2026")
+    val tabIndex: MutableState<Int> = mutableIntStateOf(0)
     var ownAnnouncementsList: MutableState<List<OwnAnnouncementListItem>> =
         mutableStateOf(emptyList())
     val publicAnnouncementsList: MutableState<List<PublicAnnouncementListItem>> =
         mutableStateOf(emptyList())
     val isFinished: MutableState<Boolean> = mutableStateOf(true)
-
 
     fun initAppNavigator(appNavigator: AppNavigator) {
         this.appNavigator = appNavigator
@@ -52,6 +53,7 @@ class TabbedAnnouncementsViewModel @Inject constructor(private val tabbedAnnounc
             ownAnnouncementsList.value = emptyList()
             publicAnnouncementsList.value = emptyList()
             isFinished.value = true
+
             disposables.clear()
         }
     }

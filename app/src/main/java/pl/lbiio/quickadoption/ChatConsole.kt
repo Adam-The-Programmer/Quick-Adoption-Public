@@ -1,57 +1,44 @@
 package pl.lbiio.quickadoption
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
-import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
-import android.provider.DocumentsContract
-import android.provider.MediaStore
 import android.util.Log
-import android.widget.RatingBar
-
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
+import androidx.compose.material.Card
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.Card
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.RateReview
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.filled.StarRate
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -71,20 +58,16 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
-import pl.lbiio.quickadoption.data.ChatMessage
 import pl.lbiio.quickadoption.models.ChatConsoleViewModel
+import pl.lbiio.quickadoption.support.RatingBar
+import pl.lbiio.quickadoption.support.TopAppBarText
 import pl.lbiio.quickadoption.ui.theme.PurpleBrownLight
-import pl.lbiio.quickadoption.ui.theme.SalmonWhite
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.concurrent.TimeUnit
 
 @Composable
 fun ChatConsole(chatConsoleViewModel: ChatConsoleViewModel) {
@@ -107,18 +90,7 @@ fun ChatConsole(chatConsoleViewModel: ChatConsoleViewModel) {
 }
 
 
-@Composable
-private fun TopAppBarText(
-    modifier: Modifier = Modifier,
-    text: String
-) {
-    Text(
-        modifier = modifier,
-        text = text,
-        style = MaterialTheme.typography.subtitle1,
-        fontSize = 17.sp
-    )
-}
+
 
 
 @Composable
@@ -177,6 +149,8 @@ private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
     val isRatingDialogOpened = remember { mutableStateOf(false) }
 
     if (isRatingDialogOpened.value) {
+        var myRating by remember { mutableIntStateOf(0) }
+        var opinion by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = {
                 isRatingDialogOpened.value = false
@@ -190,19 +164,18 @@ private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
 
                     Text(text = "Rating ${chatConsoleViewModel.potentialKeeperName.value}", style = MaterialTheme.typography.subtitle1.copy(PurpleBrownLight))
 
-                    var myRating by remember { mutableIntStateOf(0) }
                     RatingBar(
                         currentRating = myRating,
                         onRatingChanged = { myRating = it }
                     )
 
-                    var value by remember { mutableStateOf("") }
+
 
                     OutlinedTextField(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(0.dp, 8.dp, 0.dp, 0.dp),
-                        value = value,
+                        value = opinion,
                         placeholder = {
                             Text(
                                 "Type your opinion",
@@ -210,7 +183,7 @@ private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
                             )
                         },
                         onValueChange = {
-                            value = it
+                            opinion = it
                         },
                     )
                 }
@@ -238,7 +211,7 @@ private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
                             .padding(4.dp, 0.dp, 8.dp, 0.dp),
                         onClick = {
                             isRatingDialogOpened.value = false
-                            // DB operation
+                            chatConsoleViewModel.rate(myRating, opinion)
                         }
                     ) {
                         Text("Send")
@@ -286,24 +259,44 @@ fun ChatConsoleContent(chatConsoleViewModel: ChatConsoleViewModel) {
 
     LaunchedEffect(Unit){
         chatConsoleViewModel.listenToMessages()
+        Log.d("image message", chatConsoleViewModel.potentialKeeperImage.value)
     }
 
-    Column(
-        Modifier
-            .verticalScroll(rememberScrollState())
-            .padding(bottom = 20.dp)
-    ) {
-        chatConsoleViewModel.conversation.value.forEach {
-            Message(
-                isOwn = it.UID == QuickAdoptionApp.getCurrentUserId(),
-                content = it.content,
-                contentType = it.contentType,
-                potentialKeeperImage = chatConsoleViewModel.potentialKeeperImage.value,
-                howLongAgo = timeSinceLastMessage(it.timestamp)
-            )
+    BoxWithConstraints(contentAlignment = Alignment.Center) {
+        this.constraints
+
+        Column(
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 20.dp)
+        ) {
+            chatConsoleViewModel.conversation.value.forEach {
+                Message(
+                    isOwn = it.UID == QuickAdoptionApp.getCurrentUserId(),
+                    content = it.content,
+                    contentType = it.contentType,
+                    potentialKeeperImage = chatConsoleViewModel.potentialKeeperImage.value,
+                    howLongAgo = QuickAdoptionApp.calculateTimeDifference(it.timestamp)
+                )
+            }
+        }
+
+        if (!chatConsoleViewModel.isFinished.value) {
+            Dialog(
+                onDismissRequest = { chatConsoleViewModel.isFinished.value = true },
+                DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+            ) {
+                Box(
+                    contentAlignment= Alignment.Center,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .background(Color.White, shape = RoundedCornerShape(8.dp))
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
         }
     }
-
 }
 
 
@@ -322,8 +315,8 @@ private fun Message(
         horizontalArrangement = if (isOwn) Arrangement.End else Arrangement.Start
     ) {
         if(!isOwn){
-            Image(
-                painter = rememberAsyncImagePainter(decodePathFile(potentialKeeperImage)),
+            AsyncImage(
+                model = potentialKeeperImage,
                 contentDescription = "",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -386,12 +379,11 @@ private fun MessageSenderConsole(send: (value: String, type: String) -> Unit) {
     var isDialogShown by remember { mutableStateOf(false) }
 
     var selectedImage by remember { mutableStateOf(listOf<Uri>()) }
-    //var artwork by remember { mutableStateOf("") }
     val galleryLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
             Log.d("uri", it.toString())
             selectedImage = listOf(it) as List<Uri>
-            path = getFilePath(QuickAdoptionApp.getAppContext(), it!!)!!
+            path = QuickAdoptionApp.getFilePath(QuickAdoptionApp.getAppContext(), it!!)!!
             isDialogShown = true
         }
     val launcher = rememberLauncherForActivityResult(
@@ -439,9 +431,7 @@ private fun MessageSenderConsole(send: (value: String, type: String) -> Unit) {
                                     ) -> {
                                         galleryLauncher.launch("image/*")
                                     }
-
                                     else -> {
-                                        // Asking for permission
                                         launcher.launch(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE)
                                     }
                                 }
@@ -544,101 +534,5 @@ private fun ImageSendDialog(
                 }
             }
         )
-    }
-}
-
-private fun getFilePath(context: Context, uri: Uri): String? {
-    val isMediaDocument = uri.authority == "com.android.providers.media.documents"
-    if (isMediaDocument) {
-        val docId = DocumentsContract.getDocumentId(uri)
-        val split = docId.split(":").toTypedArray()
-        val type = split[0]
-        var contentUri: Uri? = null
-        if ("image" == type) {
-            contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        } else if ("video" == type) {
-            contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        } else if ("audio" == type) {
-            contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-        }
-        val selection = "_id=?"
-        val selectionArgs = arrayOf(split[1])
-        return getDataColumn(context, contentUri, selection, selectionArgs)
-    } else if ("content".equals(uri.scheme, ignoreCase = true)) {
-        return getDataColumn(context, uri, null, null)
-    } else if ("file".equals(uri.scheme, ignoreCase = true)) {
-        return uri.path
-    }
-    return null
-}
-
-private fun getDataColumn(
-    context: Context,
-    uri: Uri?,
-    selection: String?,
-    selectionArgs: Array<String>?
-): String? {
-    var cursor: Cursor? = null
-    val column = "_data"
-    val projection = arrayOf(column)
-    try {
-        cursor = context.contentResolver.query(uri!!, projection, selection, selectionArgs, null)
-        if (cursor != null && cursor.moveToFirst()) {
-            val column_index = cursor.getColumnIndexOrThrow(column)
-            return cursor.getString(column_index)
-        }
-    } finally {
-        cursor?.close()
-    }
-    return null
-}
-
-@Composable
-private fun RatingBar(
-    maxRating: Int = 5,
-    currentRating: Int,
-    onRatingChanged: (Int) -> Unit,
-    starsColor: Color = Color.Yellow
-) {
-    Row(modifier = Modifier.padding(0.dp, 16.dp, 0.dp, 0.dp)) {
-        for (i in 1..maxRating) {
-            Icon(
-                imageVector = if (i <= currentRating) Icons.Filled.Star
-                else Icons.Filled.StarOutline,
-                contentDescription = null,
-                tint = if (i <= currentRating) starsColor
-                else Color.Unspecified,
-                modifier = Modifier
-                    .clickable { onRatingChanged(i) }
-                    .padding(4.dp)
-            )
-        }
-    }
-}
-
-private fun decodePathFile(codedPath: String): String {
-    return codedPath.replace("*", "/")
-}
-
-private fun timeSinceLastMessage(timestamp: Long): String {
-    val currentTimeMillis = System.currentTimeMillis()
-    val timeDifferenceMillis = currentTimeMillis - timestamp
-
-    val seconds = TimeUnit.MILLISECONDS.toSeconds(timeDifferenceMillis)
-    val minutes = TimeUnit.MILLISECONDS.toMinutes(timeDifferenceMillis)
-    val hours = TimeUnit.MILLISECONDS.toHours(timeDifferenceMillis)
-    val days = TimeUnit.MILLISECONDS.toDays(timeDifferenceMillis)
-
-    return when {
-        seconds < 60 -> "${seconds}s ago"
-        minutes < 60 -> "${minutes}min ago"
-        hours < 24 -> "${hours}h ago"
-        days < 365 -> "${days}d ago"
-        else -> {
-            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-            val calendar = Calendar.getInstance()
-            calendar.timeInMillis = timestamp
-            sdf.format(calendar.time)
-        }
     }
 }

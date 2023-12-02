@@ -6,7 +6,6 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -14,7 +13,6 @@ import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.launch
 import pl.lbiio.quickadoption.QuickAdoptionApp
 import pl.lbiio.quickadoption.data.OwnAnnouncementChat
-import pl.lbiio.quickadoption.data.OwnAnnouncementListItem
 import pl.lbiio.quickadoption.navigation.AppNavigator
 import pl.lbiio.quickadoption.navigation.Destination
 import pl.lbiio.quickadoption.repositories.OwnChatsListRepository
@@ -48,8 +46,8 @@ class OwnChatsListViewModel @Inject constructor(private val ownChatsListReposito
                 chatId = chatId,
                 isChatOwn = true,
                 partnerName = ownChats.value.find { it.chatID==chatId }!!.name,
-                partnerImage = QuickAdoptionApp.codePathFile(ownChats.value.find { it.chatID==chatId }!!.profileImage),
-                partnerUID = QuickAdoptionApp.codePathFile(ownChats.value.find { it.chatID==chatId }!!.potentialKeeperID),
+                partnerImage = QuickAdoptionApp.encodePathFile(ownChats.value.find { it.chatID==chatId }!!.profileImage),
+                partnerUID = ownChats.value.find { it.chatID==chatId }!!.potentialKeeperID,
                 announcementId = announcementId.value
             ))
         }

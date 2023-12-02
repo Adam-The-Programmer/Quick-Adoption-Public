@@ -2,18 +2,15 @@ package pl.lbiio.quickadoption.models
 
 import android.util.Log
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.NavController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.launch
 import pl.lbiio.quickadoption.QuickAdoptionApp
-import pl.lbiio.quickadoption.data.OwnAnnouncementChat
 import pl.lbiio.quickadoption.data.PublicAnnouncementChat
 import pl.lbiio.quickadoption.navigation.AppNavigator
 import pl.lbiio.quickadoption.navigation.Destination
@@ -56,11 +53,12 @@ class PublicChatsListViewModel @Inject constructor(private val publicChatsListRe
                     chatId = chatId,
                     isChatOwn = false,
                     partnerName = publicChats.value.find { it.chatID==chatId }!!.name,
-                    partnerImage = QuickAdoptionApp.codePathFile(publicChats.value.find { it.chatID==chatId }!!.profileImage),
-                    partnerUID = QuickAdoptionApp.codePathFile(publicChats.value.find { it.chatID==chatId }!!.ownerID),
+                    partnerImage = QuickAdoptionApp.encodePathFile(publicChats.value.find { it.chatID==chatId }!!.profileImage),
+                    partnerUID = publicChats.value.find { it.chatID==chatId }!!.ownerID,
                     announcementId = publicChats.value.find { it.chatID==chatId }!!.announcementID
                 )
             )
+            Log.d("profile image", QuickAdoptionApp.encodePathFile(publicChats.value.find { it.chatID==chatId }!!.profileImage))
         }
     }
 

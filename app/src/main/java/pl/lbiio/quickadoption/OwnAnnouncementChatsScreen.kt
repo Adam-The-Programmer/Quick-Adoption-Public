@@ -20,9 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
-
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
@@ -30,9 +27,8 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Cancel
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.QuestionMark
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -44,15 +40,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import pl.lbiio.quickadoption.data.OwnAnnouncementChat
 import pl.lbiio.quickadoption.models.OwnChatsListViewModel
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.concurrent.TimeUnit
+import pl.lbiio.quickadoption.support.TopAppBarText
 
 @Composable
 fun OwnAnnouncementChatsScreen(ownChatsListViewModel: OwnChatsListViewModel) {
@@ -68,18 +61,6 @@ fun OwnAnnouncementChatsScreen(ownChatsListViewModel: OwnChatsListViewModel) {
     )
 }
 
-@Composable
-private fun TopAppBarText(
-    modifier: Modifier = Modifier,
-    text: String
-) {
-    Text(
-        modifier = modifier,
-        text = text,
-        style = MaterialTheme.typography.subtitle1,
-        fontSize = 17.sp
-    )
-}
 
 @Composable
 private fun SetChatsListTopBar(ownChatsListViewModel: OwnChatsListViewModel) {
@@ -104,45 +85,6 @@ private fun ChatsListContent(ownChatsListViewModel: OwnChatsListViewModel) {
         ownChatsListViewModel.fillListOfChats()
     }
 
-//    val ownAnnouncementChats = listOf<OwnAnnouncementChat>(
-//        OwnAnnouncementChat(
-//            "1",
-//            "1",
-//            "Christiano",
-//            "Ronaldo",
-//            "https://bi.im-g.pl/im/52/f5/1b/z29318482Q,WCup-World-Cup-Photo-Gallery.jpg",
-//            "I can adopt your dog jhosowgwegu ugtpwrgwutg",
-//            "text",
-//            1696161432450L,
-//            "4",
-//            0
-//        ),
-//        OwnAnnouncementChat(
-//            "2",
-//            "12",
-//            "Adele",
-//            "Adkins",
-//            "https://bi.im-g.pl/im/d5/60/14/z21366229AMP,Adele.jpg",
-//            "I will call you back!",
-//            "text",
-//            1696161432450L,
-//            "4",
-//            0
-//        ),
-//        OwnAnnouncementChat(
-//            "3",
-//            "40",
-//            "Alvaro",
-//            "Soler",
-//            "https://bi.im-g.pl/im/11/06/1a/z27288081IER,Alvaro-Soler---2.jpg",
-//            "See you!",
-//            "text",
-//            1696161432450L,
-//            "AdamPiszczek",
-//            1
-//        )
-//    )
-
     BoxWithConstraints(contentAlignment = Alignment.Center) {
         this.constraints
 
@@ -166,14 +108,15 @@ private fun ChatsListContent(ownChatsListViewModel: OwnChatsListViewModel) {
             }
             ownChatsListViewModel.ownChats.value.forEach {
                 ChatsListItem(
-                    announcementId = ownChatsListViewModel.announcementId.value,
+                    //announcementId = ownChatsListViewModel.announcementId.value,
                     ownAnnouncementChat = it,
                     onItemClick = { chatId ->
                         ownChatsListViewModel.navigateToChat(chatId)
                     },
-                    onConsentGranted = { keeperId, announcementId ->
-
-                    })
+//                    onConsentGranted = { keeperId, announcementId ->
+//
+//                    }
+                )
             }
         }
 
@@ -201,61 +144,10 @@ private fun ChatsListContent(ownChatsListViewModel: OwnChatsListViewModel) {
 
 @Composable
 private fun ChatsListItem(
-    announcementId: Long,
     ownAnnouncementChat: OwnAnnouncementChat,
     onItemClick: (chatId: String) -> Unit,
-    onConsentGranted: (keeperId: String, announcementId: Long) -> Unit
+
 ) {
-
-    val openDialog = remember { mutableStateOf(false) }
-
-    if (openDialog.value) {
-        AlertDialog(
-            onDismissRequest = {
-                openDialog.value = false
-            },
-            title = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = "Consent for Adoption")
-                }
-            },
-            text = {
-                Text(text = "Do You want ${ownAnnouncementChat.name} ${ownAnnouncementChat.surname} to take care of your pet?")
-            },
-            buttons = {
-                Row(
-                    modifier = Modifier.padding(all = 8.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Button(
-                        modifier = Modifier
-                            .fillMaxWidth(0.5f)
-                            .padding(8.dp, 0.dp, 4.dp, 0.dp),
-                        onClick = {
-                            openDialog.value = false
-                        }
-                    ) {
-                        Text("No")
-                    }
-                    Button(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp, 0.dp, 8.dp, 0.dp),
-                        onClick = {
-                            openDialog.value = false
-                            onConsentGranted(ownAnnouncementChat.potentialKeeperID, announcementId)
-                        }
-                    ) {
-                        Text("Yes")
-                    }
-                }
-            }
-        )
-    }
-
     Row(
         Modifier
             .fillMaxWidth()
@@ -315,36 +207,12 @@ private fun ChatsListItem(
                     }
                     androidx.compose.material3.Text(
                         modifier = Modifier.fillMaxWidth(0.5f),
-                        text = timeSinceLastMessage(ownAnnouncementChat.lastMessageTimestamp),
+                        text = QuickAdoptionApp.calculateTimeDifference(ownAnnouncementChat.lastMessageTimestamp),
                         style = MaterialTheme.typography.caption,
                     )
 
                 }
             }
-        }
-    }
-}
-
-
-private fun timeSinceLastMessage(timestamp: Long): String {
-    val currentTimeMillis = System.currentTimeMillis()
-    val timeDifferenceMillis = currentTimeMillis - timestamp
-
-    val seconds = TimeUnit.MILLISECONDS.toSeconds(timeDifferenceMillis)
-    val minutes = TimeUnit.MILLISECONDS.toMinutes(timeDifferenceMillis)
-    val hours = TimeUnit.MILLISECONDS.toHours(timeDifferenceMillis)
-    val days = TimeUnit.MILLISECONDS.toDays(timeDifferenceMillis)
-
-    return when {
-        seconds < 60 -> "${seconds}s ago"
-        minutes < 60 -> "${minutes}min ago"
-        hours < 24 -> "${hours}h ago"
-        days < 365 -> "${days}d ago"
-        else -> {
-            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-            val calendar = Calendar.getInstance()
-            calendar.timeInMillis = timestamp
-            sdf.format(calendar.time)
         }
     }
 }

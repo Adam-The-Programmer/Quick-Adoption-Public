@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import pl.lbiio.quickadoption.QuickAdoptionApp
 import pl.lbiio.quickadoption.data.ChatMessage
 import pl.lbiio.quickadoption.data.LastMessageDTO
+import pl.lbiio.quickadoption.data.OpinionToInsertDTO
 import pl.lbiio.quickadoption.navigation.AppNavigator
 import pl.lbiio.quickadoption.navigation.Destination
 import pl.lbiio.quickadoption.repositories.ChatConsoleRepository
@@ -176,5 +177,27 @@ class ChatConsoleViewModel @Inject constructor(private val chatConsoleRepository
                 Log.d("setLastMessageForChat error", it.toString())
             })
         }
+    }
+
+    private fun insertOpinion(rate: Int, opinion: String, onComplete: () -> Unit, onError: (error: Throwable) -> Unit){
+        val disposable =
+            chatConsoleRepository.insertOpinion(OpinionToInsertDTO(QuickAdoptionApp.getCurrentUserId()!!, potentialKeeperUID.value, rate, opinion))
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                    { onComplete() },
+                    { error -> onError(error) }
+                )
+        disposables.add(disposable)
+    }
+
+    fun rate(rate: Int, opinion: String){
+        isFinished.value = false
+        insertOpinion(rate, opinion, {
+           isFinished.value = true
+        }, {
+            Log.d("rate error", it.toString())
+            isFinished.value = true
+        })
     }
 }

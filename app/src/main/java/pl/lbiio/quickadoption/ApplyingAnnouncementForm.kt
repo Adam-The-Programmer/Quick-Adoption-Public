@@ -1,65 +1,41 @@
 package pl.lbiio.quickadoption
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
-import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
-import android.provider.DocumentsContract
-import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.Interaction
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.DatePickerColors
-import androidx.compose.material3.DatePickerDialog
-
-import androidx.compose.material3.DateRangePicker
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -71,28 +47,20 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import coil.compose.rememberAsyncImagePainter
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import pl.lbiio.quickadoption.models.ApplyAnnouncementViewModel
-import pl.lbiio.quickadoption.support.RangeDateFormatter
+import pl.lbiio.quickadoption.support.DateRangePickerSample
+import pl.lbiio.quickadoption.support.FormInput
+import pl.lbiio.quickadoption.support.TopAppBarText
 import java.io.File
-import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun ApplyingAnnouncementForm(applyAnnouncementViewModel: ApplyAnnouncementViewModel) {
@@ -120,7 +88,6 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
 
     BoxWithConstraints(contentAlignment = Alignment.Center) {
         this.constraints
-        Log.d("announcement.species Screen", applyAnnouncementViewModel.announcementId.value.toString())
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -193,12 +160,11 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
 
 
             var selectedImage by remember { mutableStateOf(listOf<Uri>()) }
-            //var artwork by remember { mutableStateOf("") }
             val galleryLauncher =
                 rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
                     Log.d("uri", it.toString())
                     selectedImage = listOf(it) as List<Uri>
-                    applyAnnouncementViewModel.animalImage.value = getFilePath(QuickAdoptionApp.getAppContext(), it!!)!!
+                    applyAnnouncementViewModel.animalImage.value = QuickAdoptionApp.getFilePath(QuickAdoptionApp.getAppContext(), it!!)!!
 
                 }
             val launcher = rememberLauncherForActivityResult(
@@ -215,13 +181,13 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
                 painterResource(id = R.drawable.ic_image)
             } else if(!applyAnnouncementViewModel.animalImage.value.contains("http")) {
                 val bitmap: Bitmap = BitmapFactory.decodeFile(
-                    File(decodePathFile(applyAnnouncementViewModel.animalImage.value)).absolutePath,
+                    File(QuickAdoptionApp.decodePathFile(applyAnnouncementViewModel.animalImage.value)).absolutePath,
                     BitmapFactory.Options()
                 )
                 val imageBitmap: ImageBitmap = bitmap.asImageBitmap()
                 BitmapPainter(imageBitmap)
             }else{
-                rememberAsyncImagePainter(decodePathFile(applyAnnouncementViewModel.animalImage.value))
+                rememberAsyncImagePainter(QuickAdoptionApp.decodePathFile(applyAnnouncementViewModel.animalImage.value))
             }
             Image(
                 painter = painter,
@@ -308,19 +274,6 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
 }
 
 @Composable
-private fun TopAppBarText(
-    modifier: Modifier = Modifier,
-    text: String
-) {
-    Text(
-        modifier = modifier,
-        text = text,
-        style = MaterialTheme.typography.subtitle1,
-        fontSize = 17.sp
-    )
-}
-
-@Composable
 private fun SetApplyingAnnouncementFormTopBar(applyAnnouncementViewModel: ApplyAnnouncementViewModel){
     TopAppBar(
         title = {
@@ -336,282 +289,3 @@ private fun SetApplyingAnnouncementFormTopBar(applyAnnouncementViewModel: ApplyA
         elevation = 0.dp
     )
 }
-
-@Composable
-private fun FormInput(
-    maxChar: Int,
-    label: String,
-    leadingIcon: ImageVector,
-    transformation: VisualTransformation,
-    keyboardType: KeyboardType,
-    maxLines: Int,
-    currentValue: String,
-    onTextChange: (content: String) -> Unit
-) {
-    val keyboardOptions = KeyboardOptions.Default.copy(
-        keyboardType = keyboardType // Set the keyboard type to Phone
-    )
-    var text by remember(currentValue) { mutableStateOf(currentValue) }
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp, 16.dp, 8.dp, 8.dp)
-    ) {
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = text,
-            onValueChange = {
-                if (it.length <= maxChar){
-                    text = it
-                    onTextChange(it)
-                }
-            },
-
-            label = { Text(label) },
-            leadingIcon = {
-                Icon(leadingIcon, null)
-            },
-            trailingIcon = {
-                Icon(
-                    Icons.Default.Clear, null,
-                    modifier = Modifier.clickable { text = "" })
-            },
-            maxLines = maxLines,
-            visualTransformation = transformation,
-            keyboardOptions = keyboardOptions
-        )
-
-        Text(
-            text = "${text.length} / $maxChar",
-            textAlign = TextAlign.End,
-            style = MaterialTheme.typography.caption,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(end = 16.dp)
-        )
-    }
-}
-
-
-@Composable
-private fun DateInput(
-    currentValue: String,
-    onClick: () -> Unit
-) {
-
-    val interactionSource = remember {
-        object : MutableInteractionSource {
-            override val interactions = MutableSharedFlow<Interaction>(
-                extraBufferCapacity = 16,
-                onBufferOverflow = BufferOverflow.DROP_OLDEST,
-            )
-
-            override suspend fun emit(interaction: Interaction) {
-                if (interaction is PressInteraction.Release) {
-                    onClick()
-                }
-
-                interactions.emit(interaction)
-            }
-
-            override fun tryEmit(interaction: Interaction): Boolean {
-                return interactions.tryEmit(interaction)
-            }
-        }
-    }
-
-    var text by remember(currentValue) { mutableStateOf(currentValue) }
-
-        Box(modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp, 16.dp, 8.dp, 8.dp),
-        ) {
-            OutlinedTextField(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                value = text,
-                onValueChange = {
-
-                },
-                label = { Text("Date Range") },
-                leadingIcon = {
-                    Icon(Icons.Default.DateRange, null)
-                },
-                trailingIcon = {
-                    Icon(
-                        Icons.Default.Clear, null,
-                        modifier = Modifier.clickable { text = "" })
-                },
-                readOnly = true,
-                interactionSource = interactionSource
-            )
-        }
-
-}
-
-
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DateRangePickerSample(applyAnnouncementViewModel: ApplyAnnouncementViewModel) {
-    val formatter = SimpleDateFormat("dd MMMM yyyy", Locale.ROOT)
-
-    //val calendar = Calendar.getInstance()
-    //calendar.set(2023, 9, 25) // year, month, date
-
-    var startDate by remember {
-        mutableLongStateOf(System.currentTimeMillis()+604800000) // or use mutableStateOf(calendar.timeInMillis)
-    }
-
-    //calendar.set(2024, 12, 31) // year, month, date
-
-    var endDate by remember {
-        mutableLongStateOf(System.currentTimeMillis()+604800000*2) // or use mutableStateOf(calendar.timeInMillis)
-    }
-
-    // set the initial dates
-    val dateRangePickerState = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = startDate,
-        initialSelectedEndDateMillis = endDate
-    )
-
-    var showDateRangePicker by remember {
-        mutableStateOf(false)
-    }
-
-    if (showDateRangePicker) {
-        DatePickerDialog(
-            onDismissRequest = {
-                showDateRangePicker = false
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showDateRangePicker = false
-                    startDate = dateRangePickerState.selectedStartDateMillis!!
-                    endDate = dateRangePickerState.selectedEndDateMillis!!
-                    applyAnnouncementViewModel.dateRange.value = "${formatInputDateValue(startDate)}-${formatInputDateValue(endDate)}"
-                    //range = applyAnnouncementViewModel.date.value
-                    Log.d("zakres", applyAnnouncementViewModel.dateRange.value)
-                }) {
-                    Text(text = "Confirm")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showDateRangePicker = false
-                }) {
-                    Text(text = "Cancel")
-                }
-            }
-        ) {
-            DateRangePicker(
-                state = dateRangePickerState,
-                modifier = Modifier.height(height = 500.dp),
-                dateFormatter = RangeDateFormatter(),
-                title= { Text(text = "")},
-                showModeToggle = false,
-                colors =
-                DatePickerColors(
-                    containerColor = pl.lbiio.quickadoption.ui.theme.Salmon,
-                    titleContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    headlineContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    weekdayContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    subheadContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    navigationContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    yearContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    disabledYearContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    currentYearContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    selectedYearContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    disabledSelectedYearContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    selectedYearContainerColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    disabledSelectedYearContainerColor = pl.lbiio.quickadoption.ui.theme.SalmonWhite,
-                    dayContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    disabledDayContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    selectedDayContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    disabledSelectedDayContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    selectedDayContainerColor = pl.lbiio.quickadoption.ui.theme.Salmon,
-                    disabledSelectedDayContainerColor = pl.lbiio.quickadoption.ui.theme.SalmonWhite,
-                    todayContentColor = pl.lbiio.quickadoption.ui.theme.Salmon,
-                    todayDateBorderColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    dayInSelectionRangeContainerColor = pl.lbiio.quickadoption.ui.theme.Salmon,
-                    dayInSelectionRangeContentColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    dividerColor = pl.lbiio.quickadoption.ui.theme.PurpleBrown,
-                    dateTextFieldColors = TextFieldDefaults.textFieldColors() // You can customize TextFieldColors if needed
-                )
-
-            )
-        }
-    }
-    DateInput(applyAnnouncementViewModel.dateRange.value) {
-        showDateRangePicker = true
-
-    }
-}
-
-private fun formatInputDateValue(dateMillis: Long): String {
-    val date = LocalDate.ofEpochDay(dateMillis / 86400000) // Convert millis to LocalDate
-
-    // Format the date as "yy MM dd"
-    return String.format(
-        "%02d.%02d.%02d",
-        date.dayOfMonth,
-        date.monthValue,
-        date.year
-    )
-}
-private fun getFilePath(context: Context, uri: Uri): String? {
-    val isMediaDocument = uri.authority == "com.android.providers.media.documents"
-    if (isMediaDocument) {
-        val docId = DocumentsContract.getDocumentId(uri)
-        val split = docId.split(":").toTypedArray()
-        val type = split[0]
-        var contentUri: Uri? = null
-        if ("image" == type) {
-            contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        } else if ("video" == type) {
-            contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-        } else if ("audio" == type) {
-            contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
-        }
-        val selection = "_id=?"
-        val selectionArgs = arrayOf(split[1])
-        return getDataColumn(context, contentUri, selection, selectionArgs)
-    } else if ("content".equals(uri.scheme, ignoreCase = true)) {
-        return getDataColumn(context, uri, null, null)
-    } else if ("file".equals(uri.scheme, ignoreCase = true)) {
-        return uri.path
-    }
-    return null
-}
-
-private fun getDataColumn(
-    context: Context,
-    uri: Uri?,
-    selection: String?,
-    selectionArgs: Array<String>?
-): String? {
-    var cursor: Cursor? = null
-    val column = "_data"
-    val projection = arrayOf(column)
-    try {
-        cursor = context.contentResolver.query(uri!!, projection, selection, selectionArgs, null)
-        if (cursor != null && cursor.moveToFirst()) {
-            val column_index = cursor.getColumnIndexOrThrow(column)
-            return cursor.getString(column_index)
-        }
-    } finally {
-        cursor?.close()
-    }
-    return null
-}
-
-//private fun codePathFile(path: String): String {
-//    return path.replace("/", "*")
-//}
-
-private fun decodePathFile(codedPath: String): String {
-    return codedPath.replace("*", "/")
-}
-
-
-

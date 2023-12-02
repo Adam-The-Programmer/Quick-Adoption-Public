@@ -17,25 +17,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -44,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import pl.lbiio.quickadoption.models.LoginViewModel
+import pl.lbiio.quickadoption.support.SigningFormInput
+import pl.lbiio.quickadoption.support.TopAppBarText
 import pl.lbiio.quickadoption.ui.theme.Salmon
 
 @Composable
@@ -59,19 +53,6 @@ fun LoginScreen(
             it.calculateBottomPadding()
             LoginContent(loginViewModel)
         },
-    )
-}
-
-@Composable
-private fun TopAppBarText(
-    modifier: Modifier = Modifier,
-    text: String
-) {
-    Text(
-        modifier = modifier,
-        text = text,
-        style = MaterialTheme.typography.subtitle1,
-        fontSize = 17.sp
     )
 }
 
@@ -106,7 +87,7 @@ private fun LoginContent(
             )
             Spacer(modifier = Modifier.height(30.dp))
 
-            FormInput(
+            SigningFormInput(
                 maxChar = 30,
                 label = "Email",
                 leadingIcon = Icons.Default.Email,
@@ -116,7 +97,7 @@ private fun LoginContent(
                 }
             )
 
-            FormInput(
+            SigningFormInput(
                 maxChar = 30,
                 label = "Password",
                 leadingIcon = Icons.Default.Password,
@@ -177,55 +158,5 @@ private fun LoginContent(
                 }
             }
         }
-
-    }
-
-
-}
-
-@Composable
-private fun FormInput(
-    maxChar: Int,
-    label: String,
-    leadingIcon: ImageVector,
-    transformation: VisualTransformation,
-    onTextChange: (content: String) -> Unit
-) {
-    var text by remember { mutableStateOf("") }
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(8.dp, 16.dp, 8.dp, 8.dp)
-    ) {
-        OutlinedTextField(
-            modifier = Modifier.fillMaxWidth(),
-            value = text,
-            onValueChange = {
-                if (it.length <= maxChar){
-                    text = it
-                    onTextChange(text)
-                }
-            },
-
-            label = { Text(label) },
-            leadingIcon = {
-                Icon(leadingIcon, null)
-            },
-            trailingIcon = {
-                Icon(
-                    Icons.Default.Clear, null,
-                    modifier = Modifier.clickable { text = "" })
-            },
-            singleLine = true,
-            visualTransformation = transformation,
-        )
-
-        Text(
-            text = "${text.length} / $maxChar",
-            textAlign = TextAlign.End,
-            style = MaterialTheme.typography.caption,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(end = 16.dp)
-        )
     }
 }

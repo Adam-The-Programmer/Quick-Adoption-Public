@@ -1,5 +1,6 @@
 package pl.lbiio.quickadoption.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -95,6 +96,7 @@ fun MainActivityNavigate() {
                     chatConsoleViewModel.isChatOwn.value = isChatOwn.toBoolean()
                     chatConsoleViewModel.potentialKeeperName.value = partnerName.toString()
                     chatConsoleViewModel.potentialKeeperImage.value = QuickAdoptionApp.decodePathFile(partnerImage.toString())
+                    Log.d("profile image view model", chatConsoleViewModel.potentialKeeperImage.value)
                     chatConsoleViewModel.potentialKeeperUID.value = partnerUID.toString()
                     chatConsoleViewModel.announcementId.value = announcementId.toString().toLong()
                     //Log.d("wartosc", isChatOwn.toBoolean().toString())

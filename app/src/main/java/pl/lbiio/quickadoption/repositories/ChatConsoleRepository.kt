@@ -16,6 +16,7 @@ import kotlinx.coroutines.tasks.await
 import pl.lbiio.quickadoption.QuickAdoptionApp
 import pl.lbiio.quickadoption.data.ChatMessage
 import pl.lbiio.quickadoption.data.LastMessageDTO
+import pl.lbiio.quickadoption.data.OpinionToInsertDTO
 import pl.lbiio.quickadoption.services.ApiService
 import retrofit2.http.Body
 import retrofit2.http.Path
@@ -113,6 +114,10 @@ class ChatConsoleRepository @Inject constructor(private val apiService: ApiServi
 
     fun setLastMessageForChat(ChatID: String, lastMessageDTO: LastMessageDTO): Completable{
         return apiService.setLastMessageForChat(ChatID, lastMessageDTO)
+    }
+
+    fun insertOpinion(opinionToInsertDTO: OpinionToInsertDTO): Completable{
+        return apiService.insertOpinion(opinionToInsertDTO)
     }
 
 }
