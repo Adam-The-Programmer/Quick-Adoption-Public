@@ -14,7 +14,7 @@ Many pet owners face the challenge of finding care for their animals while they 
 1. Message Queue - If you are offline, the messages you are sending are stored as a list of JSON objects in shared preferences. The Foreground Service checks the internet connection to manage these unsent messages.
 2. Profile Editing - You can easily modify your profile data, e.g., location, image.
 3. Creating, Modifying, and Deleting Announcements
-4. Real-time Chat - Based on Firestore database changes listening.
+4. **Real-time Chat - Based on Firestore database changes listening.**
 5. Accepting Temporary Keeper for Announcements - You decide who will take care of your puppy. 🙂
 6. Browsing and Adding Opinions of Users, Competing in Leaderboard
 7. Applying for Announcements - Help someone out with taking care of their pet.
