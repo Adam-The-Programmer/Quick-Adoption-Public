@@ -15,10 +15,11 @@ import pl.lbiio.quickadoption.QuickAdoptionApp
 import pl.lbiio.quickadoption.data.OwnAnnouncement
 import pl.lbiio.quickadoption.navigation.AppNavigator
 import pl.lbiio.quickadoption.repositories.ApplyingAnnouncementRepository
+import pl.lbiio.quickadoption.repositories.InternetAccessRepository
 import javax.inject.Inject
 
 @HiltViewModel
-class ApplyAnnouncementViewModel @Inject constructor(private val applyingAnnouncementRepository: ApplyingAnnouncementRepository) :
+class ApplyAnnouncementViewModel @Inject constructor(private val applyingAnnouncementRepository: ApplyingAnnouncementRepository, private val internetAccessRepository: InternetAccessRepository) :
     ViewModel() {
     private val disposables = CompositeDisposable()
     private var appNavigator: AppNavigator? = null
@@ -38,27 +39,34 @@ class ApplyAnnouncementViewModel @Inject constructor(private val applyingAnnounc
         this.appNavigator = appNavigator
     }
 
-    fun getAnnouncementById() {
+    fun getAnnouncementById(handleInternetError:()->Unit) {
         viewModelScope.launch {
             isFinished.value = false
-            getParticularOwnAnnouncement(
-                announcementId.value,
-                onSuccess = { announcement ->
-                    species.value = announcement.species
-                    breed.value = announcement.breed
-                    animalName.value = announcement.animalName
-                    dateRange.value = announcement.dateRange
-                    food.value = announcement.food
-                    animalImage.value = announcement.animalImage
-                    animalDescription.value = announcement.animalDescription
+            if(internetAccessRepository.isInternetAvailable()){
+                getParticularOwnAnnouncement(
+                    announcementId.value,
+                    onSuccess = { announcement ->
+                        species.value = announcement.species
+                        breed.value = announcement.breed
+                        animalName.value = announcement.animalName
+                        dateRange.value = announcement.dateRange
+                        food.value = announcement.food
+                        animalImage.value = announcement.animalImage
+                        animalDescription.value = announcement.animalDescription
 
-                    isFinished.value = true
-                    Log.d("getting announcement", "Successful")
-                }, onError = {
-                    isFinished.value = true
-                    Log.d("getting announcement", "Error")
-                }
-            )
+                        isFinished.value = true
+                        Log.d("getting announcement", "Successful")
+                    }, onError = {
+                        isFinished.value = true
+                        Log.d("getting announcement", "Error")
+                    }
+                )
+            }else{
+                isFinished.value = true
+                Log.e("isInternetAvailable", "no!")
+                handleInternetError()
+            }
+
         }
 
 
@@ -87,18 +95,42 @@ class ApplyAnnouncementViewModel @Inject constructor(private val applyingAnnounc
         }
     }
 
-    fun applyAnnouncement() {
+    fun applyAnnouncement(handleInternetError:()->Unit) {
         viewModelScope.launch {
             isFinished.value = false
-            QuickAdoptionApp.getCurrentUserId()?.let { userID ->
-                applyingAnnouncementRepository.uploadAnimalImage(
-                    "$userID-${System.currentTimeMillis()}",
-                    animalImage.value
-                ) { url ->
-                    if (announcementId.value == -1L) {
-                        addAnnouncement(QuickAdoptionApp.getCurrentUserId()!!,
-                            OwnAnnouncement(
-                                -1L,
+            if(internetAccessRepository.isInternetAvailable()){
+                QuickAdoptionApp.getCurrentUserId()?.let { userID ->
+                    applyingAnnouncementRepository.uploadAnimalImage(
+                        "$userID-${System.currentTimeMillis()}",
+                        animalImage.value
+                    ) { url ->
+                        if (announcementId.value == -1L) {
+                            addAnnouncement(QuickAdoptionApp.getCurrentUserId()!!,
+                                OwnAnnouncement(
+                                    -1L,
+                                    animalName.value,
+                                    species.value,
+                                    breed.value,
+                                    dateRange.value,
+                                    food.value,
+                                    url,
+                                    animalDescription.value
+                                ),
+                                onComplete = {
+                                    Log.d("Inserting", "Successful")
+                                    isFinished.value = true
+                                    navigateUp()
+                                },
+                                onError = {
+                                    isFinished.value = true
+                                    Log.d("Inserting", "Error")
+                                    it.printStackTrace()
+                                }
+                            )
+
+                        } else {
+                            updateAnnouncement(OwnAnnouncement(
+                                announcementId.value,
                                 animalName.value,
                                 species.value,
                                 breed.value,
@@ -107,42 +139,25 @@ class ApplyAnnouncementViewModel @Inject constructor(private val applyingAnnounc
                                 url,
                                 animalDescription.value
                             ),
-                            onComplete = {
-                                Log.d("Inserting", "Successful")
-                                isFinished.value = true
-                                navigateUp()
-                            },
-                            onError = {
-                                isFinished.value = true
-                                Log.d("Inserting", "Error")
-                                it.printStackTrace()
-                            }
-                        )
-
-                    } else {
-                        updateAnnouncement(OwnAnnouncement(
-                            announcementId.value,
-                            animalName.value,
-                            species.value,
-                            breed.value,
-                            dateRange.value,
-                            food.value,
-                            url,
-                            animalDescription.value
-                        ),
-                            onComplete = {
-                                isFinished.value = true
-                                Log.d("updating", "Successful")
-                                navigateUp()
-                            },
-                            onError = {
-                                isFinished.value = true
-                                Log.d("Inserting", "Error")
-                                it.printStackTrace()
-                            })
+                                onComplete = {
+                                    isFinished.value = true
+                                    Log.d("updating", "Successful")
+                                    navigateUp()
+                                },
+                                onError = {
+                                    isFinished.value = true
+                                    Log.d("Inserting", "Error")
+                                    it.printStackTrace()
+                                })
+                        }
                     }
                 }
+            }else{
+                isFinished.value = true
+                Log.e("isInternetAvailable", "no!")
+                handleInternetError()
             }
+
         }
     }
 

@@ -19,6 +19,8 @@ sealed class Destination(protected val route: String, vararg params: String) {
 
     object AnnouncementFormScreen : NoArgumentsDestination("announcement_form_screen")
 
+    object LeaderBoardScreen : NoArgumentsDestination("leader_board_screen")
+
 
     object AnnouncementEditScreen : Destination(
         "announcement_form_screen",
@@ -42,6 +44,8 @@ sealed class Destination(protected val route: String, vararg params: String) {
     }
 
     object PublicAnnouncementsChatsScreen : NoArgumentsDestination("public_announcements_chats")
+
+    object EditingAccountScreen : NoArgumentsDestination("editing_account")
 
 
     object ChatConsoleScreen : Destination("chat", "chat_id", "announcement_id", "is_chat_own", "partner_name", "partner_image", "partner_uid") {

@@ -1,12 +1,16 @@
 package pl.lbiio.quickadoption.navigation
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.rememberNavController
 import pl.lbiio.quickadoption.ApplyingAnnouncementForm
 import pl.lbiio.quickadoption.ChatConsole
+import pl.lbiio.quickadoption.EditingAccountScreen
+import pl.lbiio.quickadoption.LeaderBoardScreen
 import pl.lbiio.quickadoption.OpinionsScreen
 import pl.lbiio.quickadoption.OwnAnnouncementChatsScreen
 import pl.lbiio.quickadoption.PublicAnnouncementDetailScreen
@@ -15,12 +19,15 @@ import pl.lbiio.quickadoption.QuickAdoptionApp
 import pl.lbiio.quickadoption.TabbedAnnouncementsScreen
 import pl.lbiio.quickadoption.models.ApplyAnnouncementViewModel
 import pl.lbiio.quickadoption.models.ChatConsoleViewModel
+import pl.lbiio.quickadoption.models.EditingAccountViewModel
+import pl.lbiio.quickadoption.models.LeaderBoardViewModel
 import pl.lbiio.quickadoption.models.OpinionsViewModel
 import pl.lbiio.quickadoption.models.OwnChatsListViewModel
 import pl.lbiio.quickadoption.models.PublicAnnouncementDetailsViewModel
 import pl.lbiio.quickadoption.models.PublicChatsListViewModel
 import pl.lbiio.quickadoption.models.TabbedAnnouncementsViewModel
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainActivityNavigate() {
 
@@ -40,6 +47,11 @@ fun MainActivityNavigate() {
     chatConsoleViewModel.initAppNavigator(appNavigator)
     val opinionsViewModel: OpinionsViewModel = hiltViewModel()
     opinionsViewModel.initAppNavigator(appNavigator)
+    val leaderBoardViewModel: LeaderBoardViewModel = hiltViewModel()
+    leaderBoardViewModel.initAppNavigator(appNavigator)
+    val editingAccountViewModel: EditingAccountViewModel = hiltViewModel()
+    editingAccountViewModel.initAppNavigator(appNavigator)
+
     NavigationEffects(
         navigationChannel = appNavigator.navigationChannel,
         navHostController = navController
@@ -49,6 +61,7 @@ fun MainActivityNavigate() {
         startDestination = Destination.TabbedScreen
     ) {
         composable(destination = Destination.TabbedScreen) {
+            tabbedAnnouncementsViewModel.tabIndex.value = 0
             TabbedAnnouncementsScreen(tabbedAnnouncementsViewModel)
         }
         composable(destination = Destination.AnnouncementFormScreen) {
@@ -101,9 +114,9 @@ fun MainActivityNavigate() {
                     chatConsoleViewModel.announcementId.value = announcementId.toString().toLong()
                     //Log.d("wartosc", isChatOwn.toBoolean().toString())
                     //chatConsoleViewModel.initValues()
-                    LaunchedEffect(Unit){
-                        chatConsoleViewModel.listenToMessages()
-                    }
+//                    LaunchedEffect(Unit){
+//                        chatConsoleViewModel.listenToMessages()
+//                    }
                     ChatConsole(chatConsoleViewModel)
                 }
             }
@@ -125,6 +138,13 @@ fun MainActivityNavigate() {
                 OpinionsScreen(opinionsViewModel)
             }
 
+        }
+
+        composable(destination = Destination.LeaderBoardScreen) {
+            LeaderBoardScreen(leaderBoardViewModel)
+        }
+        composable(destination = Destination.EditingAccountScreen) {
+            EditingAccountScreen(editingAccountViewModel)
         }
     }
 }

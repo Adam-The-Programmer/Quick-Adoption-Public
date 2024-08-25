@@ -8,5 +8,6 @@ data class OwnAnnouncementListItem(
     val dateRange: String,
     val animalImage: String,
     val hasNewOffer: Boolean,
-    val numberOfOffers: Int
+    val numberOfOffers: Int,
+    val isInProgress: Boolean
 )

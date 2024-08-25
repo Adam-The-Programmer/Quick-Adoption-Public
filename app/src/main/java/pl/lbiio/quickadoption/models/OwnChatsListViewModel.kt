@@ -15,11 +15,12 @@ import pl.lbiio.quickadoption.QuickAdoptionApp
 import pl.lbiio.quickadoption.data.OwnAnnouncementChat
 import pl.lbiio.quickadoption.navigation.AppNavigator
 import pl.lbiio.quickadoption.navigation.Destination
+import pl.lbiio.quickadoption.repositories.InternetAccessRepository
 import pl.lbiio.quickadoption.repositories.OwnChatsListRepository
 import javax.inject.Inject
 
 @HiltViewModel
-class OwnChatsListViewModel @Inject constructor(private val ownChatsListRepository: OwnChatsListRepository) :
+class OwnChatsListViewModel @Inject constructor(private val ownChatsListRepository: OwnChatsListRepository, private val internetAccessRepository: InternetAccessRepository) :
     ViewModel() {
     private val disposables = CompositeDisposable()
     private var appNavigator: AppNavigator? = null
@@ -84,26 +85,33 @@ class OwnChatsListViewModel @Inject constructor(private val ownChatsListReposito
         disposables.add(disposable)
     }
 
-    fun fillListOfChats(){
+    fun fillListOfChats(handleInternetError:()->Unit){
         viewModelScope.launch {
             isFinished.value = false
-            getOwnChatsForAnnouncement(
-                onSuccess = {chatsList ->
-                    ownChats.value = chatsList.toMutableList()
+            if(internetAccessRepository.isInternetAvailable()){
+                getOwnChatsForAnnouncement(
+                    onSuccess = {chatsList ->
+                        ownChats.value = chatsList.toMutableList()
+                        isFinished.value = true
+                    },
+                    onError = {
+                        Log.d("getOwnChatsForAnnouncement error", it.toString())
+                        isFinished.value = true
+                    }
+                )
+                isFinished.value = false
+                setAnnouncementDontHaveUnreadMessage({
                     isFinished.value = true
-                },
-                onError = {
-                    Log.d("getOwnChatsForAnnouncement error", it.toString())
+                }, {
+                    Log.d("setAnnouncementDontHaveUnreadMessage error", it.toString())
                     isFinished.value = true
-                }
-            )
-            isFinished.value = false
-            setAnnouncementDontHaveUnreadMessage({
+                })
+            }else{
                 isFinished.value = true
-            }, {
-                Log.d("setAnnouncementDontHaveUnreadMessage error", it.toString())
-                isFinished.value = true
-            })
+                Log.e("isInternetAvailable", "no!")
+                handleInternetError()
+            }
+
         }
     }
 }

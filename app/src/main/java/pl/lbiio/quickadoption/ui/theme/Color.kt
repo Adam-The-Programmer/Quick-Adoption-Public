@@ -11,6 +11,9 @@ val Salmon = Color(0xfffbb8ac)
 val PurpleBrown = Color(0xFF503537)
 val PurpleBrownLight = Color(0xFF684A4C)
 
+val Active = Color(0xfffbb8ac)
+val Gold = Color(0xFFF7E6B6)
+
 
 @SuppressLint("ConflictingOnColor")
 internal val LightColorPalette = lightColors(

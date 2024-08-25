@@ -17,9 +17,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -39,11 +42,15 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.ShareLocation
 import androidx.compose.material.icons.filled.StarRate
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,11 +65,14 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
+import pl.lbiio.quickadoption.data.ConversationMessage
+import pl.lbiio.quickadoption.data.CurrentOpinion
 import pl.lbiio.quickadoption.models.ChatConsoleViewModel
 import pl.lbiio.quickadoption.support.RatingBar
 import pl.lbiio.quickadoption.support.TopAppBarText
@@ -96,7 +106,61 @@ fun ChatConsole(chatConsoleViewModel: ChatConsoleViewModel) {
 @Composable
 private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
 
+    val isRatingDialogOpened = remember { mutableStateOf(false) }
+    val currentOpinion = remember { mutableStateOf(CurrentOpinion()) }
+
     val isAssigningDialogOpened = remember { mutableStateOf(false) }
+    val isSharingLocationDialogOpened = remember { mutableStateOf(false) }
+    val isInternetNotAvailable = remember { mutableStateOf(false) }
+    val actionBrokenByInternetLoss = remember { mutableStateOf(0) }
+
+    val locationDataText = remember { mutableStateOf("") }
+
+    if (isInternetNotAvailable.value) {
+        AlertDialog(onDismissRequest = {
+            isInternetNotAvailable.value = false
+        }, title = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = "Internet Connection Is Lost")
+            }
+        }, buttons = {
+            Row(
+                modifier = Modifier.padding(all = 8.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Button(modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .padding(8.dp, 0.dp, 4.dp, 0.dp),
+                    onClick = {
+                        isInternetNotAvailable.value = false
+                    }) {
+                    Text("Dismiss")
+                }
+                Button(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp, 0.dp, 8.dp, 0.dp),
+                    onClick = {
+                        isInternetNotAvailable.value = false
+                        when (actionBrokenByInternetLoss.value) {
+                            0 -> {
+                                isAssigningDialogOpened.value = true
+                            }
+                            1 -> {
+                                isRatingDialogOpened.value = true
+                            }
+                        }
+                    }) {
+                    Text("Reload")
+                }
+            }
+        })
+    }
+
+
+
 
     if (isAssigningDialogOpened.value) {
         AlertDialog(
@@ -135,7 +199,10 @@ private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
                             .padding(4.dp, 0.dp, 8.dp, 0.dp),
                         onClick = {
                             isAssigningDialogOpened.value = false
-                            chatConsoleViewModel.acceptChatAndAssignUser()
+                            actionBrokenByInternetLoss.value = 0
+                            chatConsoleViewModel.acceptChatAndAssignUser {
+                                isInternetNotAvailable.value = true
+                            }
                         }
                     ) {
                         Text("YES")
@@ -146,11 +213,10 @@ private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
     }
 
 
-    val isRatingDialogOpened = remember { mutableStateOf(false) }
-
     if (isRatingDialogOpened.value) {
-        var myRating by remember { mutableIntStateOf(0) }
-        var opinion by remember { mutableStateOf("") }
+        var myRating by remember { mutableIntStateOf(currentOpinion.value.rateStars) }
+        var opinion by remember { mutableStateOf(currentOpinion.value.content) }
+        Log.d("id opinii", currentOpinion.value.opinionID.toString())
         AlertDialog(
             onDismissRequest = {
                 isRatingDialogOpened.value = false
@@ -211,7 +277,64 @@ private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
                             .padding(4.dp, 0.dp, 8.dp, 0.dp),
                         onClick = {
                             isRatingDialogOpened.value = false
-                            chatConsoleViewModel.rate(myRating, opinion)
+                            actionBrokenByInternetLoss.value = 1
+                            chatConsoleViewModel.rate(myRating, opinion, currentOpinion.value.opinionID) {
+                                isInternetNotAvailable.value = true
+                            }
+                        }
+                    ) {
+                        Text("Send")
+                    }
+                }
+            }
+        )
+    }
+
+    if (isSharingLocationDialogOpened.value) {
+
+        AlertDialog(
+            onDismissRequest = {
+                isSharingLocationDialogOpened.value = false
+            },
+            text = {
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+
+                    Text(text = "Sending Your location Data", style = MaterialTheme.typography.subtitle1.copy(PurpleBrownLight))
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(text = locationDataText.value)
+
+                }
+
+            },
+            buttons = {
+                Row(
+                    modifier = Modifier.padding(all = 8.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .padding(8.dp, 0.dp, 4.dp, 0.dp),
+                        onClick = {
+                            isSharingLocationDialogOpened.value = false
+                        }
+                    ) {
+                        Text("Cancel")
+                    }
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp, 0.dp, 8.dp, 0.dp),
+                        onClick = {
+                            isSharingLocationDialogOpened.value = false
+                            actionBrokenByInternetLoss.value = 1
+                            chatConsoleViewModel.uploadMessage(locationDataText.value, "text")
                         }
                     ) {
                         Text("Send")
@@ -244,9 +367,26 @@ private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
                     Icon(Icons.Default.Check, null, tint = Color.White)
                 }
                 IconButton(onClick = {
-                    isRatingDialogOpened.value = true
+                    chatConsoleViewModel.getCurrentOpinionData(chatConsoleViewModel.potentialKeeperUID.value, QuickAdoptionApp.getCurrentUserId(), {
+                        isRatingDialogOpened.value = true
+                        currentOpinion.value = it
+                    }, {
+                        isRatingDialogOpened.value = true
+                    })
                 }) {
                     Icon(Icons.Default.StarRate, null, tint = Color.White)
+                }
+            }
+            else{
+                IconButton(onClick = {
+                    chatConsoleViewModel.getParsedLocationText({
+                        isSharingLocationDialogOpened.value = true
+                        locationDataText.value = it
+                    },{
+                        isInternetNotAvailable.value = false
+                    })
+                }) {
+                    Icon(Icons.Default.ShareLocation, null, tint = Color.White)
                 }
             }
         },
@@ -256,10 +396,11 @@ private fun SetChatConsoleTopBar(chatConsoleViewModel: ChatConsoleViewModel) {
 
 @Composable
 fun ChatConsoleContent(chatConsoleViewModel: ChatConsoleViewModel) {
+    val scrollState = rememberScrollState()
 
     LaunchedEffect(Unit){
+        scrollState.animateScrollTo(scrollState.maxValue)
         chatConsoleViewModel.listenToMessages()
-        Log.d("image message", chatConsoleViewModel.potentialKeeperImage.value)
     }
 
     BoxWithConstraints(contentAlignment = Alignment.Center) {
@@ -267,17 +408,35 @@ fun ChatConsoleContent(chatConsoleViewModel: ChatConsoleViewModel) {
 
         Column(
             Modifier
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(bottom = 20.dp)
         ) {
-            chatConsoleViewModel.conversation.value.forEach {
-                Message(
-                    isOwn = it.UID == QuickAdoptionApp.getCurrentUserId(),
-                    content = it.content,
-                    contentType = it.contentType,
-                    potentialKeeperImage = chatConsoleViewModel.potentialKeeperImage.value,
-                    howLongAgo = QuickAdoptionApp.calculateTimeDifference(it.timestamp)
-                )
+
+            val messages = chatConsoleViewModel.messages.observeAsState()
+
+            messages.value?.forEach {
+                Log.d("messages widok", it.toString())//chatConsoleViewModel.messages.value.forEach {
+                when (it) {
+                    is ConversationMessage.ProvidedMessage -> {
+                        Message(
+                            isOwn = it.UID == QuickAdoptionApp.getCurrentUserId(),
+                            content = it.content,
+                            contentType = it.contentType,
+                            potentialKeeperImage = chatConsoleViewModel.potentialKeeperImage.value,
+                            time = QuickAdoptionApp.calculateTimeDifference(it.timestamp)
+                        )
+                    }
+                    is ConversationMessage.PendingMessage -> {
+                        Message(
+                            isOwn = true,
+                            content = it.content,
+                            contentType = it.contentType,
+                            potentialKeeperImage = chatConsoleViewModel.potentialKeeperImage.value,
+                            time = null
+                        )
+                    }
+                }
+
             }
         }
 
@@ -306,8 +465,9 @@ private fun Message(
     content: String,
     contentType: String,
     potentialKeeperImage: String,
-    howLongAgo: String
+    time: String?
 ) {
+    Log.d("wiadomość", content)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -322,7 +482,6 @@ private fun Message(
                 modifier = Modifier
                     .size(50.dp)
                     .clip(RoundedCornerShape(50.dp))
-
             )
         }
         Card(
@@ -338,9 +497,15 @@ private fun Message(
             )
         ) {
             if (contentType == "text") {
-                Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.Bottom) {
-                    Text(text = content, modifier = Modifier.padding(0.dp, 0.dp, 20.dp, 0.dp))
-                    Text(text = howLongAgo, style = MaterialTheme.typography.caption)
+                Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(text = content, modifier = Modifier
+                        .padding(0.dp, 0.dp, 10.dp, 0.dp)
+                        .fillMaxWidth(0.7f))
+                    if(time==null){
+                        Icon(modifier = Modifier.padding(0.dp, 10.dp, 0.dp, 0.dp), imageVector = Icons.Outlined.Schedule, contentDescription = null, tint = Color.White)
+                    }else{
+                        Text(text = time, style = MaterialTheme.typography.caption)
+                    }
                 }
 
 
@@ -356,19 +521,20 @@ private fun Message(
                                 .size(200.dp)
                         )
                     }
-
-                    Text(
-                        modifier = Modifier.padding(0.dp, 0.dp, 8.dp, 4.dp),
-                        text = howLongAgo,
-                        style = MaterialTheme.typography.caption
-                    )
+                    if(time==null){
+                        Icon(modifier = Modifier.size(20.dp), imageVector = Icons.Outlined.Schedule, contentDescription = null, tint = Color.White)
+                    }else{
+                        Text(
+                            modifier = Modifier.padding(0.dp, 0.dp, 8.dp, 4.dp),
+                            text = time,
+                            style = MaterialTheme.typography.caption
+                        )
+                    }
                 }
 
             }
-
         }
     }
-
 }
 
 @Composable
@@ -431,6 +597,7 @@ private fun MessageSenderConsole(send: (value: String, type: String) -> Unit) {
                                     ) -> {
                                         galleryLauncher.launch("image/*")
                                     }
+
                                     else -> {
                                         launcher.launch(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE)
                                     }

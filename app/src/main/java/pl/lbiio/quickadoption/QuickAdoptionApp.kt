@@ -5,8 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
+import android.os.Build
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import androidx.annotation.RequiresApi
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -25,7 +27,7 @@ class QuickAdoptionApp : Application() {
         private lateinit var auth: FirebaseAuth
         private lateinit var instance: QuickAdoptionApp
 
-        fun getAuth(): FirebaseAuth? {
+        fun getAuth(): FirebaseAuth {
             return auth
         }
 
@@ -33,7 +35,7 @@ class QuickAdoptionApp : Application() {
             return auth.currentUser
         }
 
-        fun getCurrentUserId(): String? {
+        fun getCurrentUserId(): String {
             return auth.uid.toString()
         }
 
@@ -61,7 +63,7 @@ class QuickAdoptionApp : Application() {
 
             return when {
                 //seconds < 60 -> "${seconds}s ago"
-                minutes < 60 -> "${minutes}min ago"
+                minutes < 60 -> "${minutes+1}min ago"
                 hours < 24 -> "${hours}h ago"
                 days < 365 -> "${days}d ago"
                 else -> {
@@ -73,6 +75,7 @@ class QuickAdoptionApp : Application() {
             }
         }
 
+        @RequiresApi(Build.VERSION_CODES.O)
         fun formatInputDateValue(dateMillis: Long): String {
             val date = LocalDate.ofEpochDay(dateMillis / 86400000) // Convert millis to LocalDate
 
@@ -91,12 +94,16 @@ class QuickAdoptionApp : Application() {
                 val split = docId.split(":").toTypedArray()
                 val type = split[0]
                 var contentUri: Uri? = null
-                if ("image" == type) {
-                    contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                } else if ("video" == type) {
-                    contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-                } else if ("audio" == type) {
-                    contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                when (type) {
+                    "image" -> {
+                        contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    }
+                    "video" -> {
+                        contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                    }
+                    "audio" -> {
+                        contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                    }
                 }
                 val selection = "_id=?"
                 val selectionArgs = arrayOf(split[1])
@@ -121,8 +128,8 @@ class QuickAdoptionApp : Application() {
             try {
                 cursor = context.contentResolver.query(uri!!, projection, selection, selectionArgs, null)
                 if (cursor != null && cursor.moveToFirst()) {
-                    val column_index = cursor.getColumnIndexOrThrow(column)
-                    return cursor.getString(column_index)
+                    val columnIndex = cursor.getColumnIndexOrThrow(column)
+                    return cursor.getString(columnIndex)
                 }
             } finally {
                 cursor?.close()
@@ -136,7 +143,6 @@ class QuickAdoptionApp : Application() {
             calendar.timeInMillis = timestamp
             return sdf.format(calendar.time)
         }
-
     }
 
     override fun onCreate() {

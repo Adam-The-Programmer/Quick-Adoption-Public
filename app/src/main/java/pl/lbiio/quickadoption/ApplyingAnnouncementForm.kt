@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
@@ -77,12 +78,67 @@ fun ApplyingAnnouncementForm(applyAnnouncementViewModel: ApplyAnnouncementViewMo
 }
 
 private var imgBitmap: Bitmap? = null
+
 @Composable
-private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnnouncementViewModel)
-{
-    LaunchedEffect(Unit){
-        if(applyAnnouncementViewModel.announcementId.value!=-1L){
-            applyAnnouncementViewModel.getAnnouncementById()
+private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnnouncementViewModel) {
+    val isInternetNotAvailable = remember { mutableStateOf(false) }
+    val actionBrokenByInternetLoss =
+        remember { mutableStateOf(0) } // 0-getAnnouncementById(), 1-applyAnnouncement()
+
+    if (isInternetNotAvailable.value) {
+        AlertDialog(onDismissRequest = {
+            isInternetNotAvailable.value = false
+        }, title = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = "Internet Connection Is Lost")
+            }
+        }, buttons = {
+            Row(
+                modifier = Modifier.padding(all = 8.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Button(modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .padding(8.dp, 0.dp, 4.dp, 0.dp),
+                    onClick = {
+                        isInternetNotAvailable.value = false
+                    }) {
+                    Text("Dismiss")
+                }
+                Button(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp, 0.dp, 8.dp, 0.dp),
+                    onClick = {
+                        isInternetNotAvailable.value = false
+                        when (actionBrokenByInternetLoss.value) {
+                            0 -> {
+                                applyAnnouncementViewModel.getAnnouncementById {
+                                    isInternetNotAvailable.value = true
+                                }
+                            }
+
+                            1 -> {
+                                applyAnnouncementViewModel.applyAnnouncement {
+                                    isInternetNotAvailable.value = true
+                                }
+                            }
+                        }
+                    }) {
+                    Text("Reload")
+                }
+            }
+        })
+    }
+
+    LaunchedEffect(Unit) {
+        if (applyAnnouncementViewModel.announcementId.value != -1L) {
+            actionBrokenByInternetLoss.value = 0
+            applyAnnouncementViewModel.getAnnouncementById {
+                isInternetNotAvailable.value = true
+            }
         }
     }
 
@@ -92,166 +148,156 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally) {
-            FormInput(
-                maxChar = 30,
-                label = "Name",
-                leadingIcon = Icons.Default.Edit,
-                transformation = VisualTransformation.None,
-                keyboardType = KeyboardType.Text,
-                maxLines = 1,
-                currentValue = applyAnnouncementViewModel.animalName.value,
-                onTextChange = {
-                    applyAnnouncementViewModel.animalName.value = it
-                }
-            )
-            FormInput(
-                maxChar = 30,
-                label = "Species",
-                leadingIcon = Icons.Default.Edit,
-                transformation = VisualTransformation.None,
-                keyboardType = KeyboardType.Text,
-                maxLines = 1,
-                currentValue = applyAnnouncementViewModel.species.value,
-                onTextChange = {
-                    applyAnnouncementViewModel.species.value = it
-                }
-            )
-            FormInput(
-                maxChar = 30,
-                label = "Breed",
-                leadingIcon = Icons.Default.Edit,
-                transformation = VisualTransformation.None,
-                keyboardType = KeyboardType.Text,
-                maxLines = 1,
-                currentValue = applyAnnouncementViewModel.breed.value,
-                onTextChange = {
-                    applyAnnouncementViewModel.breed.value = it
-                }
-            )
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
-            DateRangePickerSample(applyAnnouncementViewModel)
+            if ((applyAnnouncementViewModel.isFinished.value && !isInternetNotAvailable.value)||actionBrokenByInternetLoss.value==1) {
+                FormInput(maxChar = 30,
+                    label = "Name",
+                    leadingIcon = Icons.Default.Edit,
+                    transformation = VisualTransformation.None,
+                    keyboardType = KeyboardType.Text,
+                    maxLines = 1,
+                    currentValue = applyAnnouncementViewModel.animalName.value,
+                    onTextChange = {
+                        applyAnnouncementViewModel.animalName.value = it
+                    })
+                FormInput(maxChar = 30,
+                    label = "Species",
+                    leadingIcon = Icons.Default.Edit,
+                    transformation = VisualTransformation.None,
+                    keyboardType = KeyboardType.Text,
+                    maxLines = 1,
+                    currentValue = applyAnnouncementViewModel.species.value,
+                    onTextChange = {
+                        applyAnnouncementViewModel.species.value = it
+                    })
+                FormInput(maxChar = 30,
+                    label = "Breed",
+                    leadingIcon = Icons.Default.Edit,
+                    transformation = VisualTransformation.None,
+                    keyboardType = KeyboardType.Text,
+                    maxLines = 1,
+                    currentValue = applyAnnouncementViewModel.breed.value,
+                    onTextChange = {
+                        applyAnnouncementViewModel.breed.value = it
+                    })
 
-            FormInput(
-                maxChar = 30,
-                label = "Food",
-                leadingIcon = Icons.Default.Edit,
-                transformation = VisualTransformation.None,
-                keyboardType = KeyboardType.Text,
-                maxLines = 1,
-                currentValue = applyAnnouncementViewModel.food.value,
-                onTextChange = {
-                    applyAnnouncementViewModel.food.value = it
-                }
-            )
+                DateRangePickerSample(applyAnnouncementViewModel)
 
-            FormInput(
-                maxChar = 250,
-                label = "Animal Description",
-                leadingIcon = Icons.Default.Edit,
-                transformation = VisualTransformation.None,
-                keyboardType = KeyboardType.Text,
-                maxLines = 8,
-                currentValue = applyAnnouncementViewModel.animalDescription.value,
-                onTextChange = {
-                    applyAnnouncementViewModel.animalDescription.value = it
-                }
-            )
+                FormInput(maxChar = 30,
+                    label = "Food",
+                    leadingIcon = Icons.Default.Edit,
+                    transformation = VisualTransformation.None,
+                    keyboardType = KeyboardType.Text,
+                    maxLines = 1,
+                    currentValue = applyAnnouncementViewModel.food.value,
+                    onTextChange = {
+                        applyAnnouncementViewModel.food.value = it
+                    })
+
+                FormInput(maxChar = 250,
+                    label = "Animal Description",
+                    leadingIcon = Icons.Default.Edit,
+                    transformation = VisualTransformation.None,
+                    keyboardType = KeyboardType.Text,
+                    maxLines = 8,
+                    currentValue = applyAnnouncementViewModel.animalDescription.value,
+                    onTextChange = {
+                        applyAnnouncementViewModel.animalDescription.value = it
+                    })
 
 
-            var selectedImage by remember { mutableStateOf(listOf<Uri>()) }
-            val galleryLauncher =
-                rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
-                    Log.d("uri", it.toString())
-                    selectedImage = listOf(it) as List<Uri>
-                    applyAnnouncementViewModel.animalImage.value = QuickAdoptionApp.getFilePath(QuickAdoptionApp.getAppContext(), it!!)!!
+                var selectedImage by remember { mutableStateOf(listOf<Uri>()) }
+                val galleryLauncher =
+                    rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
+                        Log.d("uri", it.toString())
+                        selectedImage = listOf(it) as List<Uri>
+                        applyAnnouncementViewModel.animalImage.value = QuickAdoptionApp.getFilePath(
+                            QuickAdoptionApp.getAppContext(), it!!
+                        )!!
 
-                }
-            val launcher = rememberLauncherForActivityResult(
-                ActivityResultContracts.RequestPermission()
-            ) { isGranted: Boolean ->
-                if (isGranted) {
-                    Log.d("notification", "PERMISSION GRANTED")
-                } else {
-                    Log.d("notification", "PERMISSION DENIED")
-                }
-            }
-
-            val painter: Painter = if (selectedImage.isEmpty() && applyAnnouncementViewModel.animalImage.value.isEmpty()) {
-                painterResource(id = R.drawable.ic_image)
-            } else if(!applyAnnouncementViewModel.animalImage.value.contains("http")) {
-                val bitmap: Bitmap = BitmapFactory.decodeFile(
-                    File(QuickAdoptionApp.decodePathFile(applyAnnouncementViewModel.animalImage.value)).absolutePath,
-                    BitmapFactory.Options()
-                )
-                val imageBitmap: ImageBitmap = bitmap.asImageBitmap()
-                BitmapPainter(imageBitmap)
-            }else{
-                rememberAsyncImagePainter(QuickAdoptionApp.decodePathFile(applyAnnouncementViewModel.animalImage.value))
-            }
-            Image(
-                painter = painter,
-                contentDescription = "",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(200.dp)
-                    .clip(RoundedCornerShape(24.dp))
-            )
-
-            Button(
-                onClick = {
-                    when (PackageManager.PERMISSION_GRANTED) {
-                        ContextCompat.checkSelfPermission(
-                            QuickAdoptionApp.getAppContext(),
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE
-                        ) -> {
-                            galleryLauncher.launch("image/*")
-                        }
-
-                        else -> {
-                            // Asking for permission
-                            launcher.launch(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE)
-                        }
                     }
-                    Log.d("bmp", imgBitmap.toString())
-                },
-                modifier = Modifier
-                    .padding(8.dp, 0.dp, 8.dp, 0.dp)
-                    .fillMaxWidth()
-            ) {
-                Text(text = "PICK ARTWORK")
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Button(
-                    onClick = {
-                        applyAnnouncementViewModel.applyAnnouncement()
-                    },
-                    modifier = Modifier
-                        .padding(8.dp, 0.dp, 4.dp, 0.dp)
-                        .fillMaxWidth(0.5f)
-                ) {
-                    Text(text = "APPLY")
+                val launcher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { isGranted: Boolean ->
+                    if (isGranted) {
+                        Log.d("notification", "PERMISSION GRANTED")
+                    } else {
+                        Log.d("notification", "PERMISSION DENIED")
+                    }
                 }
 
+                val painter: Painter =
+                    if (selectedImage.isEmpty() && applyAnnouncementViewModel.animalImage.value.isEmpty()) {
+                        painterResource(id = R.drawable.ic_image)
+                    } else if (!applyAnnouncementViewModel.animalImage.value.contains("http")) {
+                        val bitmap: Bitmap = BitmapFactory.decodeFile(
+                            File(applyAnnouncementViewModel.animalImage.value).absolutePath,
+                            BitmapFactory.Options()
+                        )
+                        val imageBitmap: ImageBitmap = bitmap.asImageBitmap()
+                        BitmapPainter(imageBitmap)
+                    } else {
+                        rememberAsyncImagePainter(applyAnnouncementViewModel.animalImage.value)
+                    }
+                Image(
+                    painter = painter,
+                    contentDescription = "",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(200.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                )
                 Button(
                     onClick = {
-                        Log.d("dane", applyAnnouncementViewModel.animalDescription.value)
-                        applyAnnouncementViewModel.navigateUp()
-                    },
-                    modifier = Modifier
-                        .padding(4.dp, 0.dp, 8.dp, 0.dp)
-                        .fillMaxWidth(1f)
+                        when (PackageManager.PERMISSION_GRANTED) {
+                            ContextCompat.checkSelfPermission(
+                                QuickAdoptionApp.getAppContext(),
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE
+                            ) -> {
+                                galleryLauncher.launch("image/*")
+                            }
+                            else -> {
+                                // Asking for permission
+                                launcher.launch(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE)
+                            }
+                        }
+                        Log.d("bmp", imgBitmap.toString())
+                    }, modifier = Modifier
+                        .padding(8.dp, 0.dp, 8.dp, 0.dp)
+                        .fillMaxWidth()
                 ) {
-                    Text(text = "DISMISS")
+                    Text(text = "PICK ARTWORK")
                 }
-
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Button(
+                        onClick = {
+                            actionBrokenByInternetLoss.value = 1
+                            applyAnnouncementViewModel.applyAnnouncement {
+                                isInternetNotAvailable.value = true
+                            }
+                        }, modifier = Modifier
+                            .padding(8.dp, 0.dp, 4.dp, 0.dp)
+                            .fillMaxWidth(0.5f)
+                    ) {
+                        Text(text = "APPLY")
+                    }
+                    Button(
+                        onClick = {
+                            Log.d("dane", applyAnnouncementViewModel.animalDescription.value)
+                            applyAnnouncementViewModel.navigateUp()
+                        }, modifier = Modifier
+                            .padding(4.dp, 0.dp, 8.dp, 0.dp)
+                            .fillMaxWidth(1f)
+                    ) {
+                        Text(text = "DISMISS")
+                    }
+                }
             }
-
-
         }
 
         if (!applyAnnouncementViewModel.isFinished.value) {
@@ -260,7 +306,7 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
                 DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
             ) {
                 Box(
-                    contentAlignment= Alignment.Center,
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .size(100.dp)
                         .background(Color.White, shape = RoundedCornerShape(8.dp))
@@ -270,22 +316,18 @@ private fun ApplyingAnnouncementFormContent(applyAnnouncementViewModel: ApplyAnn
             }
         }
     }
-
 }
 
 @Composable
-private fun SetApplyingAnnouncementFormTopBar(applyAnnouncementViewModel: ApplyAnnouncementViewModel){
-    TopAppBar(
-        title = {
-            TopAppBarText(text = "Quick Adoption App")
-        },
-        navigationIcon = {
-            IconButton(onClick = {
-                applyAnnouncementViewModel.navigateUp()
-            }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
-            }
-        },
-        elevation = 0.dp
+private fun SetApplyingAnnouncementFormTopBar(applyAnnouncementViewModel: ApplyAnnouncementViewModel) {
+    TopAppBar(title = {
+        TopAppBarText(text = "Quick Adoption App")
+    }, navigationIcon = {
+        IconButton(onClick = {
+            applyAnnouncementViewModel.navigateUp()
+        }) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+        }
+    }, elevation = 0.dp
     )
 }

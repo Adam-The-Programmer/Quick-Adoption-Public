@@ -6,7 +6,10 @@ import io.reactivex.Observable
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import pl.lbiio.quickadoption.data.ApplicationForAdoptionDTO
+import pl.lbiio.quickadoption.data.CurrentOpinion
 import pl.lbiio.quickadoption.data.LastMessageDTO
+import pl.lbiio.quickadoption.data.LeaderBoardItem
+import pl.lbiio.quickadoption.data.LocationData
 import pl.lbiio.quickadoption.data.Opinion
 import pl.lbiio.quickadoption.data.OpinionToInsertDTO
 import pl.lbiio.quickadoption.data.OwnAnnouncement
@@ -16,12 +19,14 @@ import pl.lbiio.quickadoption.data.PublicAnnouncementChat
 import pl.lbiio.quickadoption.data.PublicAnnouncementDetails
 import pl.lbiio.quickadoption.data.PublicAnnouncementListItem
 import pl.lbiio.quickadoption.data.User
+import pl.lbiio.quickadoption.data.UserCurrentData
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.PATCH
 import retrofit2.http.PUT
 import retrofit2.http.Path
 
@@ -81,11 +86,14 @@ interface ApiService {
     @GET("getParticularPublicAnnouncement/{AnnouncementID}")
     fun getParticularPublicAnnouncement(@Path("AnnouncementID") AnnouncementID: Long): Observable<PublicAnnouncementDetails>
 
-    @PUT("applyForAdoption")
-    fun applyForAdoption(@Body applicationForAdoptionDTO: ApplicationForAdoptionDTO): Completable
+    @PUT("applyForAdoption/{timestamp}")
+    fun applyForAdoption(@Path("timestamp") timestamp: Long, @Body applicationForAdoptionDTO: ApplicationForAdoptionDTO): Completable
 
 
     // Chat methods
+
+    @GET("getLocationData/{UID}")
+    fun getLocationData(@Path("UID") UID: String): Observable<LocationData>
 
     @GET("ownChatsForAnnouncement/{UID}/{AnnouncementID}")
     fun getOwnChatsForAnnouncement(@Path("UID") UID: String, @Path("AnnouncementID") AnnouncementID: Long): Observable<List<OwnAnnouncementChat>>
@@ -93,20 +101,26 @@ interface ApiService {
     @GET("publicChatsForUser/{UID}")
     fun getPublicChatsForUser(@Path("UID") UID: String): Observable<List<PublicAnnouncementChat>>
 
-    @PUT("lastMessageForChat/{ChatID}") // chat console
-    fun setLastMessageForChat(@Path("ChatID") ChatID: String, @Body lastMessageDTO: LastMessageDTO): Completable
+    @PUT("lastMessageForChat/{ChatID}/{timestamp}") // chat console
+    fun setLastMessageForChat(@Path("ChatID") ChatID: String, @Path("timestamp") timestamp: Long, @Body lastMessageDTO: LastMessageDTO): Completable
 
     @PUT("makeChatAccepted/{AnnouncementID}/{ChatID}") //chatConsole
-    fun makeChatAccepted(@Path("AnnouncementID") AnnouncementID: Long, @Path("ChatID") ChatID: String): Completable //chatConsole
+    fun makeChatAccepted(@Path("AnnouncementID") AnnouncementID: Long, @Path("ChatID") ChatID: String): Observable<Int> //chatConsole
 
 
     //Opinion Methods
 
-    @PUT("insertOpinion")
-    fun insertOpinion(@Body opinionToInsertDTO: OpinionToInsertDTO): Completable
+    @PUT("insertOpinion/{timestamp}")
+    fun insertOpinion(@Path("timestamp") timestamp: Long, @Body opinionToInsertDTO: OpinionToInsertDTO): Completable
+
+    @PATCH("updateOpinion/{opinionID}/{Content}/{RateStars}/{Timestamp}")
+    fun updateOpinion(@Path("opinionID") opinionID: Int, @Path("Content") Content: String, @Path("RateStars") RateStars: Int, @Path("Timestamp") Timestamp: Long): Completable
 
     @GET("opinions/{ReceiverID}")
     fun getOpinions(@Path("ReceiverID") ReceiverID: String): Observable<List<Opinion>>
+
+    @GET("getCurrentOpinion/{receiver}/{author}")
+    fun getCurrentOpinion(@Path("receiver") receiver: String, @Path("author") author: String): Observable<CurrentOpinion>
 
 
     //User Methods
@@ -115,13 +129,19 @@ interface ApiService {
     fun insertUser(@Body user: User): Completable
 
     @PUT("updateUser/{UID}")
-    fun updateUser(@Path("UID") UID: String): Completable
+    fun updateUser(@Path("UID") UID: String, @Body user: UserCurrentData): Completable
 
     @GET("rateOfUser/{UID}")
     fun getRateOfUser(@Path("UID") UID: String): Observable<Float>
 
     @GET("getUser/{UID}")
     fun getUser(@Path("UID") UID: String): Observable<User>
+
+    @GET("getUserCurrentData/{UID}")
+    fun getUserCurrentData(@Path("UID") UID: String): Observable<UserCurrentData>
+
+    @GET("getLeaderBoard/{UID}")
+    fun getLeaderBoard(@Path("UID") UID: String): Observable<List<LeaderBoardItem>>
 
 
 }

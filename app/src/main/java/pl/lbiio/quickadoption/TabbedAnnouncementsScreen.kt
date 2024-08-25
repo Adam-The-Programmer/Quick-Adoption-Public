@@ -1,7 +1,22 @@
 package pl.lbiio.quickadoption
 
 
+import android.os.Build
+import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +47,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.ListItem
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Tab
@@ -39,11 +55,15 @@ import androidx.compose.material.TabRow
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.LocationCity
+import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Message
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.rememberBackdropScaffoldState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,6 +76,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -66,16 +87,23 @@ import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import pl.lbiio.quickadoption.data.OwnAnnouncementListItem
 import pl.lbiio.quickadoption.data.PublicAnnouncementListItem
+import pl.lbiio.quickadoption.enums.OwnAnnouncementStatus
 import pl.lbiio.quickadoption.models.TabbedAnnouncementsViewModel
 import pl.lbiio.quickadoption.support.*
+import pl.lbiio.quickadoption.ui.theme.Active
+import pl.lbiio.quickadoption.ui.theme.PurpleBrownLight
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
-
+private val actionBrokenByInternetLoss = mutableStateOf(0) // 0-loading own 1-loading public
+private val isInternetNotAvailable = mutableStateOf(false)
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TabbedAnnouncementsScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
 
     Scaffold(
         topBar = {
-            SetMainActivityTopBar()
+            SetMainActivityTopBar(tabbedAnnouncementsViewModel)
         },
         backgroundColor = Color.White,
         content = {
@@ -86,21 +114,110 @@ fun TabbedAnnouncementsScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsV
 }
 
 @Composable
-private fun SetMainActivityTopBar() {
+private fun SetMainActivityTopBar(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
     TopAppBar(
         title = {
             TopAppBarText(text = "Quick Adoption App")
+        },
+        actions = {
+            // Adding an action icon
+            IconButton(onClick = {
+                tabbedAnnouncementsViewModel.navigateToLeaderBoard()
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.EmojiEvents,  // Using an icon that could represent an award
+                    contentDescription = "Award Cup"
+                )
+            }
+            IconButton(onClick = {
+                tabbedAnnouncementsViewModel.navigateToOwnOpinions()
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = "Opinions"
+                )
+            }
+            IconButton(onClick = {
+                tabbedAnnouncementsViewModel.navigateToEditingAccountScreen()
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.ManageAccounts,
+                    contentDescription = "Personal Data"
+                )
+            }
         },
         elevation = 0.dp
     )
 }
 
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
+
+    if(isInternetNotAvailable.value){
+        AlertDialog(
+            onDismissRequest = {
+                isInternetNotAvailable.value = false
+            },
+            title = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    androidx.compose.material.Text(text = "Internet Connection Is Lost")
+                }
+            },
+            buttons = {
+                Row(
+                    modifier = Modifier.padding(all = 8.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth(0.5f)
+                            .padding(8.dp, 0.dp, 4.dp, 0.dp),
+                        onClick = {
+                            isInternetNotAvailable.value = false
+                        }
+                    ) {
+                        androidx.compose.material.Text("Dismiss")
+                    }
+                    Button(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp, 0.dp, 8.dp, 0.dp),
+                        onClick = {
+                            isInternetNotAvailable.value = false
+                            when(actionBrokenByInternetLoss.value){
+                                0->{
+                                    tabbedAnnouncementsViewModel.populateOwnAnnouncementsList {
+                                        isInternetNotAvailable.value = true
+                                    }
+                                }
+                                1->{
+                                    tabbedAnnouncementsViewModel.populatePublicAnnouncementsList {
+                                        isInternetNotAvailable.value = true
+                                    }
+                                }
+                            }
+
+                        }
+                    ) {
+                        androidx.compose.material.Text("Reload")
+                    }
+                }
+            }
+        )
+    }
+
+
    LaunchedEffect(Unit){
-       tabbedAnnouncementsViewModel.populateOwnAnnouncementsList()
+       actionBrokenByInternetLoss.value = 0
+       tabbedAnnouncementsViewModel.populateOwnAnnouncementsList{
+           isInternetNotAvailable.value = true
+       }
    }
 
     val tabs = listOf("Own", "Public")
@@ -159,7 +276,10 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
                         ),
                         onClick = {
                             if (tabbedAnnouncementsViewModel.country.value.isNotEmpty() && tabbedAnnouncementsViewModel.city.value.isNotEmpty() && tabbedAnnouncementsViewModel.dateRange.value.isNotEmpty()) {
-                                tabbedAnnouncementsViewModel.populatePublicAnnouncementsList()
+                                actionBrokenByInternetLoss.value = 1
+                                tabbedAnnouncementsViewModel.populatePublicAnnouncementsList{
+                                    isInternetNotAvailable.value = true
+                                }
                                 scope.launch {
                                     scaffoldState.conceal()
                                 }
@@ -202,8 +322,10 @@ private fun TabbedAnnouncementsContent(tabbedAnnouncementsViewModel: TabbedAnnou
         }
     }
 }
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
+
     BoxWithConstraints(
         Modifier.fillMaxSize(),
     ) {
@@ -212,32 +334,32 @@ private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 64.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .padding(start = 8.dp, top = 16.dp, bottom = 16.dp)
-                    .fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Your Announcements".uppercase(),
-                    style = MaterialTheme.typography.subtitle1
-                )
-                Spacer(Modifier.width(12.dp))
-                androidx.compose.material.Text("${tabbedAnnouncementsViewModel.ownAnnouncementsList.value.size} items".uppercase())
-            }
 
-            tabbedAnnouncementsViewModel.ownAnnouncementsList.value.forEach {
-                OwnAnnouncementListItem(
-                    it,
-                    { announcementId, name ->
-                        tabbedAnnouncementsViewModel.navigateToChatsList(announcementId, name)
-                    }, { announcement ->
-                        tabbedAnnouncementsViewModel.navigateToEditingForm(announcement)
-                    },
-                    {announcementId ->
-                        tabbedAnnouncementsViewModel.deleteAnnouncementAndRefresh(announcementId)
+            if(tabbedAnnouncementsViewModel.isFinished.value && tabbedAnnouncementsViewModel.ownAnnouncementsList.value.isNotEmpty() && !isInternetNotAvailable.value){
+                Row(
+                    modifier = Modifier
+                        .padding(start = 8.dp, top = 16.dp, bottom = 16.dp)
+                        .fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Your Announcements".uppercase(),
+                        style = MaterialTheme.typography.subtitle1
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text("${tabbedAnnouncementsViewModel.ownAnnouncementsList.value.size} items".uppercase(), style = MaterialTheme.typography.subtitle2.copy(PurpleBrownLight))
+                }
+
+                val categoryToAnnouncement = categorizeAnnouncements(tabbedAnnouncementsViewModel.ownAnnouncementsList.value)
+
+                categoryToAnnouncement.forEach { (category, announcements) ->
+                    if (announcements.isNotEmpty()) {
+                        SpinnerList(category, announcements, tabbedAnnouncementsViewModel)
                     }
-                )
+                }
+            }
+            else if(tabbedAnnouncementsViewModel.isFinished.value && tabbedAnnouncementsViewModel.ownAnnouncementsList.value.isEmpty() && !isInternetNotAvailable.value){
+                Text(text = "No Announcements published yet!")
             }
         }
 
@@ -279,6 +401,49 @@ private fun OwnScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel
     }
 }
 
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun SpinnerList(
+    category: OwnAnnouncementStatus,
+    announcements: List<OwnAnnouncementListItem>,
+    viewModel: TabbedAnnouncementsViewModel
+) {
+    var expanded by remember { mutableStateOf(true) }
+
+    ListItem(
+        modifier = Modifier.clickable { expanded = !expanded },
+        text = { Text(text = category.name.replace("_", " ")) },
+        trailing = {
+            Icon(
+                imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                contentDescription = if (expanded) "Collapse" else "Expand"
+            )
+        }
+    )
+    AnimatedVisibility(
+        visible = expanded,
+        enter = expandVertically(animationSpec = spring()) + fadeIn(initialAlpha = 0.3f),
+        exit = shrinkVertically(animationSpec = spring()) + fadeOut()
+    ) {
+        Column {
+            announcements.forEach { announcement ->
+                OwnAnnouncementListItem(announcement,
+                    { announcementId, name ->
+                        viewModel.navigateToChatsList(announcementId, name)
+                    }, { item ->
+                        viewModel.navigateToEditingForm(item)
+                    },
+                    { announcementId ->
+                        Log.d("id ogloszenia", announcementId.toString())
+                        viewModel.deleteAnnouncementAndRefresh(announcementId)
+                    }
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun PublicScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewModel) {
 
@@ -289,6 +454,7 @@ private fun PublicScreen(tabbedAnnouncementsViewModel: TabbedAnnouncementsViewMo
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 64.dp)
         ) {
+
 
             tabbedAnnouncementsViewModel.publicAnnouncementsList.value.forEach { announcement ->
                 PublicAnnouncement(announcement) { announcementId ->
@@ -388,6 +554,18 @@ private fun OwnAnnouncementListItem(
     onEditClick: (announcementId: Long) -> Unit,
     onRemoveClick: (animalId: Long) -> Unit,
 ) {
+
+    val infiniteTransition = rememberInfiniteTransition(label = "infinite")
+    val color by infiniteTransition.animateColor(
+        initialValue = Color.Transparent,
+        targetValue = Active,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "color"
+    )
+
     val openDialog = remember { mutableStateOf(false) }
 
     if(openDialog.value){
@@ -439,6 +617,9 @@ private fun OwnAnnouncementListItem(
 
     Row(
         Modifier
+            .drawBehind {
+                if(ownAnnouncementListItem.isInProgress)drawRect(color)
+            }
             .fillMaxWidth()
             .clickable {
                 onItemClick(
@@ -458,7 +639,7 @@ private fun OwnAnnouncementListItem(
             ) {
                 Spacer(Modifier.width(8.dp))
                 AsyncImage(
-                    model = QuickAdoptionApp.decodePathFile(ownAnnouncementListItem.animalImage),
+                    model = ownAnnouncementListItem.animalImage,
                     contentDescription = "",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -535,5 +716,33 @@ private fun OwnAnnouncementListItem(
             }
         }
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun categorizeAnnouncements(announcements: List<OwnAnnouncementListItem>): Map<OwnAnnouncementStatus, List<OwnAnnouncementListItem>> {
+    val dateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy")
+    val today = LocalDate.now()
+
+    val waiting = mutableListOf<OwnAnnouncementListItem>()
+    val outOfDate = mutableListOf<OwnAnnouncementListItem>()
+    val inProgress = mutableListOf<OwnAnnouncementListItem>()
+
+    announcements.forEach { item ->
+        val (startStr, endStr) = item.dateRange.split("-")
+        val startDate = LocalDate.parse(startStr.trim(), dateFormat)
+        val endDate = LocalDate.parse(endStr.trim(), dateFormat)
+
+        when {
+            endDate.isBefore(today) -> outOfDate.add(item)
+            startDate.isAfter(today) || (today in startDate..endDate && !item.isInProgress) -> waiting.add(item)
+            today in startDate..endDate && item.isInProgress -> inProgress.add(item)
+        }
+    }
+
+    return mapOf(
+        OwnAnnouncementStatus.WAITING to waiting,
+        OwnAnnouncementStatus.OUT_OF_DATE to outOfDate,
+        OwnAnnouncementStatus.IN_PROGRESS to inProgress
+    )
 }
 

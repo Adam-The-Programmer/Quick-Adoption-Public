@@ -10,7 +10,6 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -61,7 +60,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -79,7 +77,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import pl.lbiio.quickadoption.models.RegistrationViewModel
-import pl.lbiio.quickadoption.support.*
+import pl.lbiio.quickadoption.support.FormInput
+import pl.lbiio.quickadoption.support.TopAppBarText
 import java.io.File
 
 
@@ -91,7 +90,7 @@ fun RegistrationFormForm(
         topBar = {
             SetRegistrationFormTopBar(registrationViewModel)
         },
-        backgroundColor = Color.White,
+        backgroundColor = White,
         content = {
             it.calculateBottomPadding()
             RegistrationContent(registrationViewModel)
@@ -116,14 +115,13 @@ private fun SetRegistrationFormTopBar(registrationViewModel: RegistrationViewMod
 }
 
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun RegistrationContent(
     registrationViewModel: RegistrationViewModel
 ) {
     var animOut by remember { mutableIntStateOf(-1) }
     var animIn by remember { mutableIntStateOf(1) }
-    BoxWithConstraints(contentAlignment = Alignment.Center) {
+    BoxWithConstraints(contentAlignment = Center) {
         this.constraints
         Column(
             modifier = Modifier

@@ -15,11 +15,15 @@ import pl.lbiio.quickadoption.data.Opinion
 import pl.lbiio.quickadoption.data.PublicAnnouncementChat
 import pl.lbiio.quickadoption.navigation.AppNavigator
 import pl.lbiio.quickadoption.repositories.ApplyingAnnouncementRepository
+import pl.lbiio.quickadoption.repositories.InternetAccessRepository
 import pl.lbiio.quickadoption.repositories.OpinionsRepository
 import javax.inject.Inject
 
 @HiltViewModel
-class OpinionsViewModel @Inject constructor(private val opinionsRepository: OpinionsRepository) :
+class OpinionsViewModel @Inject constructor(
+    private val opinionsRepository: OpinionsRepository,
+    private val internetAccessRepository: InternetAccessRepository
+) :
     ViewModel() {
 
     private var appNavigator: AppNavigator? = null
@@ -40,7 +44,7 @@ class OpinionsViewModel @Inject constructor(private val opinionsRepository: Opin
         }
     }
 
-    private fun clearViewModel(){
+    private fun clearViewModel() {
         receiverID.value = ""
         opinions.value = emptyList()
         rate.value = 0.0f
@@ -48,33 +52,76 @@ class OpinionsViewModel @Inject constructor(private val opinionsRepository: Opin
         disposables.clear()
     }
 
-    fun getKeeperRate(UID: String) {
-        isFinished.value = false
+    fun getKeeperRate(UID: String, handleInternetError: () -> Unit) {
         viewModelScope.launch {
-            getRateOfUser(UID, {
+            isFinished.value = false
+            if (internetAccessRepository.isInternetAvailable()) {
+                getRateOfUser(UID, {
+                    isFinished.value = true
+                    rate.value = it
+                }, {
+                    isFinished.value = true
+                    Log.d("getKeeperRate error", it.toString())
+                })
+            } else {
                 isFinished.value = true
-                rate.value = it
-            }, {
-                isFinished.value = true
-                Log.d("getKeeperRate error", it.toString())
-            })
+                Log.e("isInternetAvailable", "no!")
+                handleInternetError()
+            }
         }
     }
 
-    fun fillListOfOpinions(receiverID :String) {
-        isFinished.value = false
+    fun fillListOfOpinions(receiverID: String, handleInternetError: () -> Unit) {
         viewModelScope.launch {
-            getOpinions(receiverID, {
+            isFinished.value = false
+            if (internetAccessRepository.isInternetAvailable()) {
+                getOpinions(receiverID, {
+                    isFinished.value = true
+                    opinions.value = it.toMutableList()
+                }, {
+                    isFinished.value = true
+                    Log.d("fillListOfOpinions error", it.toString())
+                })
+            } else {
                 isFinished.value = true
-                opinions.value = it.toMutableList()
-            }, {
-                isFinished.value = true
-                Log.d("fillListOfOpinions error", it.toString())
-            })
+                Log.e("isInternetAvailable", "no!")
+                handleInternetError()
+            }
         }
     }
 
-    private fun getOpinions(receiverID :String, onSuccess: (List<Opinion>) -> Unit, onError: (Throwable) -> Unit) {
+    fun inflateInterfaceWithData(handleInternetError: () -> Unit) {
+        viewModelScope.launch {
+            isFinished.value = false
+            if (internetAccessRepository.isInternetAvailable()) {
+                getOpinions(receiverID.value, {list->
+                    isFinished.value = true
+                    opinions.value = list.toMutableList()
+                    getRateOfUser(receiverID.value, {
+                        isFinished.value = true
+                        rate.value = it
+                    }, {
+                        isFinished.value = true
+                        Log.d("getKeeperRate error", it.toString())
+                    })
+                }, {
+                    isFinished.value = true
+                    Log.d("fillListOfOpinions error", it.toString())
+                })
+            } else {
+                isFinished.value = true
+                Log.e("isInternetAvailable", "no!")
+                handleInternetError()
+            }
+
+        }
+    }
+
+    private fun getOpinions(
+        receiverID: String,
+        onSuccess: (List<Opinion>) -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
         val disposable =
             opinionsRepository.getOpinions(receiverID)
                 .subscribeOn(Schedulers.io())
@@ -86,7 +133,11 @@ class OpinionsViewModel @Inject constructor(private val opinionsRepository: Opin
         disposables.add(disposable)
     }
 
-    private fun getRateOfUser(UID: String, onSuccess: (Float) -> Unit, onError: (Throwable) -> Unit) {
+    private fun getRateOfUser(
+        UID: String,
+        onSuccess: (Float) -> Unit,
+        onError: (Throwable) -> Unit
+    ) {
         val disposable =
             opinionsRepository.getRateOfUser(UID)
                 .subscribeOn(Schedulers.io())

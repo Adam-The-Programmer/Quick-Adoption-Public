@@ -47,8 +47,61 @@ import pl.lbiio.quickadoption.support.TopAppBarText
 import pl.lbiio.quickadoption.ui.theme.PurpleBrown
 import pl.lbiio.quickadoption.ui.theme.PurpleBrownLight
 
+private val isInternetNotAvailable = mutableStateOf(false)
+private val actionBrokenByInternetLoss = mutableStateOf(0) //0-loading content, 1-initing conversation
 @Composable
 fun PublicAnnouncementDetailScreen(publicAnnouncementDetailsViewModel: PublicAnnouncementDetailsViewModel) {
+
+    if (isInternetNotAvailable.value) {
+        AlertDialog(onDismissRequest = {
+            isInternetNotAvailable.value = false
+        }, title = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = "Internet Connection Is Lost")
+            }
+        }, buttons = {
+            Row(
+                modifier = Modifier.padding(all = 8.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Button(modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .padding(8.dp, 0.dp, 4.dp, 0.dp),
+                    onClick = {
+                        isInternetNotAvailable.value = false
+                    }) {
+                    Text("Dismiss")
+                }
+                Button(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp, 0.dp, 8.dp, 0.dp),
+                    onClick = {
+                        isInternetNotAvailable.value = false
+                        when (actionBrokenByInternetLoss.value) {
+                            0 -> {
+                                publicAnnouncementDetailsViewModel.fillDetailsObject {
+                                    isInternetNotAvailable.value = true
+                                }
+                            }
+
+                            1 -> {
+                                publicAnnouncementDetailsViewModel.initConversation {
+                                    isInternetNotAvailable.value = true
+                                }
+                            }
+                        }
+                    }) {
+                    Text("Reload")
+                }
+            }
+        })
+    }
+
+
+
     val isAdoptingDialogOpened = remember { mutableStateOf(false) }
 
     if (isAdoptingDialogOpened.value) {
@@ -106,7 +159,10 @@ fun PublicAnnouncementDetailScreen(publicAnnouncementDetailsViewModel: PublicAnn
                             .padding(4.dp, 0.dp, 8.dp, 0.dp),
                         onClick = {
                             isAdoptingDialogOpened.value = false
-                            publicAnnouncementDetailsViewModel.initConversation()
+                            actionBrokenByInternetLoss.value = 1
+                            publicAnnouncementDetailsViewModel.initConversation{
+                                isInternetNotAvailable.value = true
+                            }
                         }
                     ) {
                         Text("Send")
@@ -156,7 +212,10 @@ private fun PublicAnnouncementDetailsContent(publicAnnouncementDetailsViewModel:
         this.constraints
 
         LaunchedEffect(Unit){
-            publicAnnouncementDetailsViewModel.fillDetailsObject()
+            actionBrokenByInternetLoss.value = 0
+            publicAnnouncementDetailsViewModel.fillDetailsObject{
+                isInternetNotAvailable.value = true
+            }
         }
 
         Column(
@@ -165,91 +224,93 @@ private fun PublicAnnouncementDetailsContent(publicAnnouncementDetailsViewModel:
                 .verticalScroll(rememberScrollState())
         ) {
 
-            Row(modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp), horizontalArrangement = Arrangement.Center) {
-                Image(
-                    painter = rememberAsyncImagePainter(publicAnnouncementDetailsViewModel.announcementDetails.value.animalImage),
-                    contentDescription = "",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(300.dp)
-                        .clip(RoundedCornerShape(50.dp))
-                )
-            }
-
-            Divider(
-                modifier = Modifier.padding(64.dp, 10.dp, 64.dp, 10.dp),
-                color = Color.Black,
-                thickness = 1.dp
-            )
-
-            Text(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(), textAlign = TextAlign.Center, text = publicAnnouncementDetailsViewModel.announcementDetails.value.dateRange
-            )
-
-            Divider(
-                modifier = Modifier.padding(64.dp, 10.dp, 64.dp, 10.dp),
-                color = Color.Black,
-                thickness = 1.dp
-            )
-
-            Row(
-                modifier = Modifier
+            if((publicAnnouncementDetailsViewModel.isFinished.value && !isInternetNotAvailable.value) || actionBrokenByInternetLoss.value == 1){
+                Row(modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
-            ){
-                Text(style = MaterialTheme.typography.subtitle1, text = "Description: ")
-                Text(style = MaterialTheme.typography.body1, text = publicAnnouncementDetailsViewModel.announcementDetails.value.animalDescription)
-            }
-
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ){
-                Text(style = MaterialTheme.typography.subtitle1, text = "Food: ")
-                Text(style = MaterialTheme.typography.body1, text = publicAnnouncementDetailsViewModel.announcementDetails.value.food)
-            }
-
-
-            Row(modifier = Modifier.padding(16.dp), horizontalArrangement = Arrangement.Center) {
-                Image(
-                    painter = rememberAsyncImagePainter(publicAnnouncementDetailsViewModel.announcementDetails.value.ownerImage),
-                    contentDescription = "",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(RoundedCornerShape(50.dp))
-
-                )
-                Card(
-                    elevation = 10.dp,
-                    modifier = Modifier.padding(8.dp,0.dp,0.dp,0.dp),
-                    backgroundColor = Color.White,
-                    contentColor = PurpleBrown,
-                    shape = RoundedCornerShape(
-                        topStart = 0f,
-                        topEnd = 48f,
-                        bottomStart = 48f,
-                        bottomEnd = 48f
+                    .padding(16.dp), horizontalArrangement = Arrangement.Center) {
+                    Image(
+                        painter = rememberAsyncImagePainter(publicAnnouncementDetailsViewModel.announcementDetails.value.animalImage),
+                        contentDescription = "",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(300.dp)
+                            .clip(RoundedCornerShape(50.dp))
                     )
-                ) {
-                    Text(modifier = Modifier.padding(10.dp), text = publicAnnouncementDetailsViewModel.announcementDetails.value.ownerDescription)
                 }
-            }
 
-            Button(modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-                onClick = {
-                    onApplyClick()
+                Divider(
+                    modifier = Modifier.padding(64.dp, 10.dp, 64.dp, 10.dp),
+                    color = Color.Black,
+                    thickness = 1.dp
+                )
 
-                }) {
-                Text(text = "Apply For Adoption")
+                Text(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(), textAlign = TextAlign.Center, text = publicAnnouncementDetailsViewModel.announcementDetails.value.dateRange
+                )
+
+                Divider(
+                    modifier = Modifier.padding(64.dp, 10.dp, 64.dp, 10.dp),
+                    color = Color.Black,
+                    thickness = 1.dp
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ){
+                    Text(style = MaterialTheme.typography.subtitle1, text = "Description: ")
+                    Text(style = MaterialTheme.typography.body1, text = publicAnnouncementDetailsViewModel.announcementDetails.value.animalDescription)
+                }
+
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ){
+                    Text(style = MaterialTheme.typography.subtitle1, text = "Food: ")
+                    Text(style = MaterialTheme.typography.body1, text = publicAnnouncementDetailsViewModel.announcementDetails.value.food)
+                }
+
+
+                Row(modifier = Modifier.padding(16.dp), horizontalArrangement = Arrangement.Center) {
+                    Image(
+                        painter = rememberAsyncImagePainter(publicAnnouncementDetailsViewModel.announcementDetails.value.ownerImage),
+                        contentDescription = "",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(RoundedCornerShape(50.dp))
+
+                    )
+                    Card(
+                        elevation = 10.dp,
+                        modifier = Modifier.padding(8.dp,0.dp,0.dp,0.dp),
+                        backgroundColor = Color.White,
+                        contentColor = PurpleBrown,
+                        shape = RoundedCornerShape(
+                            topStart = 0f,
+                            topEnd = 48f,
+                            bottomStart = 48f,
+                            bottomEnd = 48f
+                        )
+                    ) {
+                        Text(modifier = Modifier.padding(10.dp), text = publicAnnouncementDetailsViewModel.announcementDetails.value.ownerDescription)
+                    }
+                }
+
+                Button(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                    onClick = {
+                        onApplyClick()
+
+                    }) {
+                    Text(text = "Apply For Adoption")
+                }
             }
 
         }

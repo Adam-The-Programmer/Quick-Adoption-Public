@@ -14,11 +14,12 @@ import pl.lbiio.quickadoption.QuickAdoptionApp
 import pl.lbiio.quickadoption.data.PublicAnnouncementChat
 import pl.lbiio.quickadoption.navigation.AppNavigator
 import pl.lbiio.quickadoption.navigation.Destination
+import pl.lbiio.quickadoption.repositories.InternetAccessRepository
 import pl.lbiio.quickadoption.repositories.PublicChatsListRepository
 import javax.inject.Inject
 
 @HiltViewModel
-class PublicChatsListViewModel @Inject constructor(private val publicChatsListRepository: PublicChatsListRepository) :
+class PublicChatsListViewModel @Inject constructor(private val publicChatsListRepository: PublicChatsListRepository, private val internetAccessRepository: InternetAccessRepository) :
     ViewModel() {
     private var appNavigator: AppNavigator? = null
     private val disposables = CompositeDisposable()
@@ -77,17 +78,24 @@ class PublicChatsListViewModel @Inject constructor(private val publicChatsListRe
         disposables.add(disposable)
     }
 
-    fun fillListOfChats() {
+    fun fillListOfChats(handleInternetError:()->Unit) {
         viewModelScope.launch {
             isFinished.value = false
-            getAllChats(
-                onSuccess = {
-                    isFinished.value = true
-                    publicChats.value = it.toMutableList()
-                }, onError = {
-                    Log.d("getAllChats error", it.toString())
-                    isFinished.value = true
-                })
+            if(internetAccessRepository.isInternetAvailable()){
+                getAllChats(
+                    onSuccess = {
+                        isFinished.value = true
+                        publicChats.value = it.toMutableList()
+                    }, onError = {
+                        Log.d("getAllChats error", it.toString())
+                        isFinished.value = true
+                    })
+            }else{
+                isFinished.value = true
+                Log.e("isInternetAvailable", "no!")
+                handleInternetError()
+            }
+
         }
     }
 }

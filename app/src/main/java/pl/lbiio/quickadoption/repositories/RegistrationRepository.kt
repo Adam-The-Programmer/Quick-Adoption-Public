@@ -21,7 +21,7 @@ class RegistrationRepository @Inject constructor(private val apiService: ApiServ
     private var storageReference: StorageReference? = null
 
     fun register(email: String, password: String): Task<AuthResult> {
-        return QuickAdoptionApp.getAuth()?.createUserWithEmailAndPassword(email, password)!!
+        return QuickAdoptionApp.getAuth().createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener {
                 Log.d("register success", "yes")
             }

@@ -3,6 +3,7 @@ package pl.lbiio.quickadoption.data
 data class PublicAnnouncementChat(
     val chatID: String,
     val announcementID: Long,
+    val dateRange: String,
     val animalName: String,
     val breed: String,
     val species: String,

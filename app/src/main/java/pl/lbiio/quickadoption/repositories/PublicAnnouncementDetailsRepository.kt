@@ -22,7 +22,7 @@ class PublicAnnouncementDetailsRepository @Inject constructor(private val apiSer
     }
 
     fun applyForAdoption(applicationForAdoptionDTO: ApplicationForAdoptionDTO): Completable {
-        return apiService.applyForAdoption(applicationForAdoptionDTO)
+        return apiService.applyForAdoption(System.currentTimeMillis(), applicationForAdoptionDTO)
     }
 
     fun setAnnouncementHaveUnreadMessage(announcementId: Long): Completable{

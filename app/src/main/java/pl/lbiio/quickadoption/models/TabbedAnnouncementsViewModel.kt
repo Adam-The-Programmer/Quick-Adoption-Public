@@ -1,13 +1,14 @@
 package pl.lbiio.quickadoption.models
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -20,26 +21,32 @@ import pl.lbiio.quickadoption.data.OwnAnnouncementListItem
 import pl.lbiio.quickadoption.data.PublicAnnouncementListItem
 import pl.lbiio.quickadoption.navigation.AppNavigator
 import pl.lbiio.quickadoption.navigation.Destination
+import pl.lbiio.quickadoption.repositories.InternetAccessRepository
 import pl.lbiio.quickadoption.repositories.TabbedAnnouncementsRepository
 import javax.inject.Inject
 
 @HiltViewModel
-class TabbedAnnouncementsViewModel @Inject constructor(private val tabbedAnnouncementsRepository: TabbedAnnouncementsRepository) :
+class TabbedAnnouncementsViewModel @Inject constructor(private val tabbedAnnouncementsRepository: TabbedAnnouncementsRepository, private val internetAccessRepository: InternetAccessRepository) :
     ViewModel() {
 
     private val disposables = CompositeDisposable()
 
     private var appNavigator: AppNavigator? = null
 
-    val country: MutableState<String> = mutableStateOf("Poland")
-    val city: MutableState<String> = mutableStateOf("Warsaw")
-    val dateRange: MutableState<String> = mutableStateOf("04.10.2023-01.01.2026")
+    val country: MutableState<String> = mutableStateOf("")
+    val city: MutableState<String> = mutableStateOf("")
+    val dateRange: MutableState<String> = mutableStateOf("")
     val tabIndex: MutableState<Int> = mutableIntStateOf(0)
     var ownAnnouncementsList: MutableState<List<OwnAnnouncementListItem>> =
         mutableStateOf(emptyList())
     val publicAnnouncementsList: MutableState<List<PublicAnnouncementListItem>> =
         mutableStateOf(emptyList())
     val isFinished: MutableState<Boolean> = mutableStateOf(true)
+
+    private fun getUID(): String {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        return currentUser?.uid ?: throw IllegalStateException("User not logged in")
+    }
 
     fun initAppNavigator(appNavigator: AppNavigator) {
         this.appNavigator = appNavigator
@@ -55,6 +62,20 @@ class TabbedAnnouncementsViewModel @Inject constructor(private val tabbedAnnounc
             isFinished.value = true
 
             disposables.clear()
+        }
+    }
+
+    fun navigateToLeaderBoard() {
+        viewModelScope.launch {
+            appNavigator?.tryNavigateTo(Destination.LeaderBoardScreen())
+            clearViewModel()
+        }
+    }
+
+    fun navigateToOwnOpinions() {
+        viewModelScope.launch {
+            appNavigator?.tryNavigateTo(Destination.OpinionsScreen(uid=getUID()))
+            clearViewModel()
         }
     }
 
@@ -99,6 +120,12 @@ class TabbedAnnouncementsViewModel @Inject constructor(private val tabbedAnnounc
     fun navigateToPublicAnnouncementsChats() {
         viewModelScope.launch {
             appNavigator?.tryNavigateTo(Destination.PublicAnnouncementsChatsScreen())
+        }
+    }
+
+    fun navigateToEditingAccountScreen(){
+        viewModelScope.launch {
+            appNavigator?.tryNavigateTo(Destination.EditingAccountScreen())
         }
     }
 
@@ -154,55 +181,74 @@ class TabbedAnnouncementsViewModel @Inject constructor(private val tabbedAnnounc
     fun deleteAnnouncementAndRefresh(announcementID: Long) {
         viewModelScope.launch {
             isFinished.value = false
-            deleteAnnouncement(
-                announcementID,
-                {
-                    getOwnAnnouncements(
-                        onSuccess = {
-                            ownAnnouncementsList.value = it.toMutableStateList()
-                            isFinished.value = true
-                        },
-                        onError = {
-                            Log.e("error with loading content", it.toString())
-                            isFinished.value = true
-                        }
-                    )
-                }, {
-                    isFinished.value = true
-                    Log.e("error deleting element", it.toString())
-                })
+            if(internetAccessRepository.isInternetAvailable()){
+                deleteAnnouncement(
+                    announcementID,
+                    {
+                        getOwnAnnouncements(
+                            onSuccess = {
+                                ownAnnouncementsList.value = it.toMutableStateList()
+                                isFinished.value = true
+                            },
+                            onError = {
+                                Log.e("error with loading content", it.toString())
+                                isFinished.value = true
+                            }
+                        )
+                    }, {
+                        isFinished.value = true
+                        Log.e("error deleting element", it.toString())
+                    })
+            }else{
+                isFinished.value = true
+                Log.e("isInternetAvailable", "no!")
+                Toast.makeText(QuickAdoptionApp.getAppContext(), "Internet not available", Toast.LENGTH_SHORT).show()
+            }
+
         }
 
     }
 
-    fun populateOwnAnnouncementsList() {
+    fun populateOwnAnnouncementsList(handleInternetError:()->Unit) {
         viewModelScope.launch {
             isFinished.value = false
-            getOwnAnnouncements(
-                onSuccess = {
-                    ownAnnouncementsList.value = it.toMutableStateList()
-                    isFinished.value = true
-                },
-                onError = {
-                    Log.e("error with loading content", it.toString())
-                    isFinished.value = true
-                }
-            )
+            if(internetAccessRepository.isInternetAvailable()){
+                getOwnAnnouncements(
+                    onSuccess = {
+                        ownAnnouncementsList.value = it.toMutableStateList()
+                        isFinished.value = true
+                    },
+                    onError = {
+                        Log.e("error with loading content", it.toString())
+                        isFinished.value = true
+                    }
+                )
+            }else{
+                isFinished.value = true
+                Log.e("isInternetAvailable", "no!")
+                handleInternetError()
+            }
         }
     }
 
-    fun populatePublicAnnouncementsList() {
+    fun populatePublicAnnouncementsList(handleInternetError:()->Unit) {
         viewModelScope.launch {
             isFinished.value = false
-            getPublicAnnouncements(
-                onSuccess = {
-                    publicAnnouncementsList.value = it.toMutableList()
-                    isFinished.value = true
-                }, onError = {
-                    Log.e("error with loading content", it.toString())
-                    isFinished.value = true
-                }
-            )
+            if(internetAccessRepository.isInternetAvailable()){
+                getPublicAnnouncements(
+                    onSuccess = {
+                        publicAnnouncementsList.value = it.toMutableList()
+                        isFinished.value = true
+                    }, onError = {
+                        Log.e("error with loading content", it.toString())
+                        isFinished.value = true
+                    }
+                )
+            }else{
+                isFinished.value = true
+                Log.e("isInternetAvailable", "no!")
+                handleInternetError()            }
+
         }
     }
 }
