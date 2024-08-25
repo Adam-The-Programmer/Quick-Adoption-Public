@@ -11,7 +11,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object ApiModule {
 
-    private const val BASE_URL = "https://quick-adoption-403417.ew.r.appspot.com/api/"
+    private const val BASE_URL = "https://your_goocle_cloud_domain/api/" // this link will be generated after gcloud app deploy
 
     @Provides
     @Singleton
